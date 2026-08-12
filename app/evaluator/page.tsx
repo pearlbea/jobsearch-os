@@ -47,11 +47,13 @@ export default function EvaluatorPage() {
   };
 
   const handleDeleteJob = (jobId: string) => {
-    setJobs((prev) => prev.filter((j) => j.id !== jobId));
-    if (selectedJob?.id === jobId) {
-      const remaining = jobs.filter((j) => j.id !== jobId);
-      setSelectedJob(remaining.length > 0 ? remaining[0] : null);
-    }
+    setJobs((prevJobs) => {
+      const remaining = prevJobs.filter((j) => j.id !== jobId);
+      setSelectedJob((prevSelected) =>
+        prevSelected?.id === jobId ? remaining[0] ?? null : prevSelected,
+      );
+      return remaining;
+    });
   };
 
   return (

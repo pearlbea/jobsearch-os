@@ -29,11 +29,12 @@ export async function DELETE(
     }
 
     // 2. Execute Delete Query with explicit user_id filter
-    const { error: deleteError } = await supabase
+    const { data: deleted, error: deleteError } = await supabase
       .from("jobs")
       .delete()
       .eq("id", id)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .select("id");
 
     if (deleteError) {
       console.error("Supabase delete error:", deleteError);
@@ -43,7 +44,11 @@ export async function DELETE(
       );
     }
 
-    return NextResponse.json({ success: true, id });
+    if (!deleted || deleted.length === 0) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, id: deleted[0].id });
   } catch (error: unknown | Error) {
     console.error("Unhandled DELETE route exception:", error);
     return NextResponse.json(

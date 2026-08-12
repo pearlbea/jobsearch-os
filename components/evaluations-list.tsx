@@ -69,6 +69,11 @@ export function EvaluationsList({
           return (
             <div
               key={job.id}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") onSelectJob(job);
+              }}
               onClick={() => onSelectJob(job)}
               className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${
                 isSelected
@@ -101,6 +106,7 @@ export function EvaluationsList({
                 onClick={(e) => handleDelete(e, job.id)}
                 className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                 title="Delete evaluation"
+                aria-label="Delete evaluation"
               >
                 {deletingId === job.id ? (
                   <span className="text-xs text-gray-400">...</span>
