@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 
     // 5. LLM Call
     const { output: evalResult } = await generateText({
-      model: anthropic("claude-opus-5"),
+      model: anthropic("claude-sonnet-5"),
       output: Output.object({ schema: compactEvaluationSchema }),
       system: systemPrompt,
       prompt: `JOB POSTING:\n${cleanedDescription}`,
