@@ -1,6 +1,48 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+export async function GET(
+  req: Request,
+  props: { params: Promise<{ id: string }> },
+) {
+  try {
+    const params = await props.params;
+    const { id } = params;
+
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: job, error } = await supabase
+      .from("jobs")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (error || !job) {
+      return NextResponse.json(
+        { error: "Job evaluation not found" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({ job });
+  } catch (error: unknown | Error) {
+    console.error("GET job error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function DELETE(
   req: Request,
   props: { params: Promise<{ id: string }> }, // Handle Next.js 15 async params safely
