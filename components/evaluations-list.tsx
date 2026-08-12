@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { JobSummary } from "@/types/database";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { getScoreBand } from "@/lib/score-band";
 
 interface EvaluationsListProps {
   jobs: JobSummary[];
@@ -39,85 +42,69 @@ export function EvaluationsList({
     }
   };
 
-  const handleRowKeyDown = (
-    e: React.KeyboardEvent<HTMLDivElement>,
-    jobId: string,
-  ) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      onSelectJob(jobId);
-    }
-  };
-
   if (jobs.length === 0) {
     return (
-      <div className="p-6 bg-white border rounded-xl text-center text-sm text-gray-500">
+      <div className="p-6 bg-white border border-zinc-200 rounded-lg text-center text-sm text-zinc-500">
         No saved evaluations yet.
       </div>
     );
   }
 
   return (
-    <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
-      <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
-        <h3 className="font-bold text-gray-900 text-sm">
+    <div className="bg-white border border-zinc-200 rounded-lg overflow-hidden">
+      <div className="px-4 py-3 border-b border-zinc-100 bg-zinc-50 flex justify-between items-center">
+        <h3 className="font-bold text-zinc-900 text-sm">
           Saved Evaluations ({jobs.length})
         </h3>
       </div>
 
-      <div className="divide-y max-h-[450px] overflow-y-auto">
+      <div className="divide-y divide-zinc-100">
         {jobs.map((job) => {
           const isSelected = job.id === selectedJobId;
           const score = job.match_score ?? 0;
-
-          const getBadgeColor = (s: number) => {
-            if (s >= 80) return "bg-green-100 text-green-800";
-            if (s >= 60) return "bg-amber-100 text-amber-800";
-            return "bg-red-100 text-red-800";
-          };
+          const band = getScoreBand(score);
 
           return (
             <div
               key={job.id}
-              onClick={() => onSelectJob(job.id)}
-              onKeyDown={(e) => handleRowKeyDown(e, job.id)}
-              role="button"
-              tabIndex={0}
-              className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${
+              className={`flex items-center justify-between pr-4 transition-colors ${
                 isSelected
-                  ? "bg-blue-50/70 border-l-4 border-blue-600"
-                  : "hover:bg-gray-50"
+                  ? "bg-indigo-50/70 border-l-4 border-indigo-600"
+                  : "hover:bg-zinc-50"
               }`}
             >
-              <div className="space-y-1 pr-4">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onSelectJob(job.id)}
+                className="h-auto flex-1 flex-col items-start justify-start gap-0 space-y-1 whitespace-normal rounded-none p-4 text-left"
+              >
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-gray-900 text-sm">
+                  <span className="font-bold text-zinc-900 text-sm">
                     {job.role_title}
                   </span>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-bold ${getBadgeColor(score)}`}
-                  >
-                    {score}%
-                  </span>
+                  <Badge variant={band}>{score}%</Badge>
                 </div>
-                <p className="text-xs text-gray-500 font-medium">
+                <p className="text-xs text-zinc-500 font-medium">
                   {job.company_name}
                 </p>
-                <p className="text-[11px] text-gray-400">
+                <p className="text-[11px] text-zinc-400">
                   {new Date(job.created_at).toLocaleDateString()}
                 </p>
-              </div>
+              </Button>
 
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 disabled={deletingId === job.id}
                 onClick={(e) => handleDelete(e, job.id)}
-                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                className="text-zinc-400 hover:bg-red-50 hover:text-red-600"
                 title="Delete evaluation"
                 aria-label="Delete evaluation"
               >
                 {deletingId === job.id ? "..." : "🗑️"}
-              </button>
+              </Button>
             </div>
           );
         })}

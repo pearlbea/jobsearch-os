@@ -1,142 +1,125 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Job, JobSummary } from "@/types/database";
+import { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { Job } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { JobEvaluatorForm } from "@/components/job-evaluator-form";
 import { EvaluationCard } from "@/components/evaluation-card";
-import { EvaluationsList } from "@/components/evaluations-list";
 
 export default function EvaluatorPage() {
-  const [jobSummaries, setJobSummaries] = useState<JobSummary[]>([]);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [isListLoading, setIsListLoading] = useState(true);
-  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  return (
+    <Suspense>
+      <EvaluatorPageContent />
+    </Suspense>
+  );
+}
+
+function EvaluatorPageContent() {
+  const searchParams = useSearchParams();
+  const jobId = searchParams.get("job");
+
+  const [activeJob, setActiveJob] = useState<Job | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(true);
 
   const supabase = createClient();
 
-  // Fetch full job details on demand when selected
-  const loadFullJobDetails = async (jobId: string) => {
-    setSelectedJobId(jobId);
-    setIsDetailLoading(true);
-    try {
-      const res = await fetch(`/api/jobs/${jobId}`);
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || "Failed to load job details");
-
-      setSelectedJob(data.job);
-    } catch (err) {
-      console.error("Error loading job details:", err);
-    } finally {
-      setIsDetailLoading(false);
-    }
-  };
-
-  // Load saved evaluations on initial mount
   useEffect(() => {
-    async function fetchSummaries() {
+    let cancelled = false;
+
+    async function loadActiveJob() {
+      setIsLoading(true);
+      setNotFound(false);
+
       try {
-        const { data, error } = await supabase
-          .from("jobs")
-          .select("id, role_title, company_name, match_score, created_at")
-          .order("created_at", { ascending: false });
+        let job: Job;
 
-        if (error) throw error;
+        if (jobId) {
+          const res = await fetch(`/api/jobs/${jobId}`);
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Failed to load job");
+          job = data.job;
+        } else {
+          const { data, error } = await supabase
+            .from("jobs")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
 
-        if (data && data.length > 0) {
-          setJobSummaries(data as JobSummary[]);
+          if (error) throw error;
+          job = data as Job;
+        }
+
+        if (!cancelled) {
+          setActiveJob(job);
+          // A result is showing — collapse the form so it's not the first
+          // thing you see; it's still one click away via "New evaluation".
+          setIsFormOpen(false);
         }
       } catch (err) {
-        console.error("Error fetching jobs:", err);
+        console.error("Error loading evaluation:", err);
+        if (!cancelled) {
+          setActiveJob(null);
+          // Only surface "not found" when a specific job was requested and
+          // missing — an empty table on the default (no jobId) path just
+          // means the user has no evaluations yet.
+          setNotFound(Boolean(jobId));
+          // Nothing to show — keep the form open so there's something to do.
+          setIsFormOpen(true);
+        }
       } finally {
-        setIsListLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
 
-    fetchSummaries();
-  }, []);
+    loadActiveJob();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId]);
 
   const handleEvaluationComplete = (newJob: Job) => {
-    // Add lightweight summary to sidebar list
-    const newSummary: JobSummary = {
-      id: newJob.id,
-      role_title: newJob.role_title,
-      company_name: newJob.company_name,
-      match_score: newJob.match_score,
-      created_at: newJob.created_at,
-    };
-
-    setJobSummaries((prev) => [newSummary, ...prev]);
-    setSelectedJob(newJob);
-    setSelectedJobId(newJob.id);
-  };
-
-  const handleDeleteJob = (jobId: string) => {
-    const updatedSummaries = jobSummaries.filter((j) => j.id !== jobId);
-    setJobSummaries(updatedSummaries);
-
-    if (selectedJobId === jobId) {
-      if (updatedSummaries.length > 0) {
-        loadFullJobDetails(updatedSummaries[0].id);
-      } else {
-        setSelectedJob(null);
-        setSelectedJobId(null);
-      }
-    }
+    setActiveJob(newJob);
+    setNotFound(false);
+    setIsFormOpen(false);
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-5xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">
-            Job Evaluator
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Evaluate job postings against your resume, competencies, and ATS
-            filters.
-          </p>
-        </div>
-
-        {/* Evaluation Input Form */}
-        <JobEvaluatorForm onEvaluationComplete={handleEvaluationComplete} />
-
-        {/* Master-Detail Layout */}
-        {isListLoading ? (
-          <div className="p-8 text-center text-sm text-gray-500">
-            Loading saved evaluations...
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left: Summary Sidebar */}
-            <div className="lg:col-span-1">
-              <EvaluationsList
-                jobs={jobSummaries}
-                selectedJobId={selectedJobId}
-                onSelectJob={loadFullJobDetails}
-                onDeleteJob={handleDeleteJob}
-              />
-            </div>
-
-            {/* Right: Active Detail View */}
-            <div className="lg:col-span-2">
-              {isDetailLoading ? (
-                <div className="p-12 bg-white border rounded-xl text-center text-sm text-gray-500">
-                  Loading evaluation report...
-                </div>
-              ) : selectedJob ? (
-                <EvaluationCard job={selectedJob} />
-              ) : (
-                <div className="p-12 bg-white border rounded-xl text-center text-gray-400 text-sm">
-                  Select an evaluation from the list or submit a new listing.
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+    <div className="max-w-5xl mx-auto flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900">
+          Job Evaluator
+        </h1>
+        <p className="text-[13.5px] text-zinc-500 mt-1">
+          Evaluate job postings against your resume, competencies, and ATS
+          filters.
+        </p>
       </div>
-    </main>
+
+      <JobEvaluatorForm
+        onEvaluationComplete={handleEvaluationComplete}
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+      />
+
+      {isLoading ? (
+        <div className="p-12 border border-zinc-200 rounded-[10px] text-center text-sm text-zinc-500">
+          Loading evaluation report...
+        </div>
+      ) : activeJob ? (
+        <EvaluationCard job={activeJob} />
+      ) : (
+        <div className="p-12 border border-zinc-200 rounded-[10px] text-center text-sm text-zinc-400">
+          {notFound
+            ? "That evaluation couldn't be found."
+            : "Submit a job posting above to see your first evaluation."}
+        </div>
+      )}
+    </div>
   );
 }

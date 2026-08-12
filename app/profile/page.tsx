@@ -21,12 +21,10 @@ export default async function ProfilePage() {
     .single();
 
   return (
-    <main className="min-h-screen bg-gray-50 py-10 px-4">
-      <ProfileForm
-        initialProfile={profile}
-        userId={user.id}
-        userEmail={user.email || ""}
-      />
-    </main>
+    <ProfileForm
+      initialProfile={profile}
+      userId={user.id}
+      userEmail={user.email || ""}
+    />
   );
 }
