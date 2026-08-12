@@ -35,7 +35,7 @@ export function AtsKeywordTable({ atsAnalysis }: AtsKeywordTableProps) {
           >
             {column.map((keyword, rowIdx) => (
               <div
-                key={keyword}
+                key={`${keyword}-${rowIdx}`}
                 className={
                   rowIdx === column.length - 1
                     ? "flex justify-between px-4 py-2.5"
