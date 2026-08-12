@@ -21,24 +21,15 @@ import { POST } from "@/app/api/evaluate-job/route";
 import { generateText } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest } from "next/server";
-
-type MockSupabaseClient = {
-  auth: { getUser: Mock };
-  from: Mock;
-};
+import { createMockQueryBuilder, createMockSupabaseClient } from "@/test/supabase-mock";
 
 describe("POST /api/evaluate-job", () => {
-  let mockSupabase: MockSupabaseClient;
+  let mockSupabase: ReturnType<typeof createMockSupabaseClient>;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockSupabase = {
-      auth: {
-        getUser: vi.fn(),
-      },
-      from: vi.fn(),
-    };
+    mockSupabase = createMockSupabaseClient();
 
     // route.ts calls createClient() to get its Supabase client — without
     // this, the mocked createClient() resolves to undefined and every test
@@ -97,13 +88,11 @@ describe("POST /api/evaluate-job", () => {
     // Mock profile query returning null
     mockSupabase.from.mockImplementation((table: string) => {
       if (table === "profiles") {
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
+        return createMockQueryBuilder({
           single: vi
             .fn()
             .mockResolvedValue({ data: null, error: new Error("Not found") }),
-        };
+        });
       }
       return {};
     });
@@ -198,26 +187,21 @@ describe("POST /api/evaluate-job", () => {
 
     mockSupabase.from.mockImplementation((table: string) => {
       if (table === "profiles") {
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
+        return createMockQueryBuilder({
           single: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
-        };
+        });
       }
       if (table === "stories") {
-        return {
-          select: vi.fn().mockReturnThis(),
+        return createMockQueryBuilder({
           eq: vi.fn().mockResolvedValue({ data: mockStories, error: null }),
-        };
+        });
       }
       if (table === "jobs") {
-        return {
-          insert: vi.fn().mockReturnThis(),
-          select: vi.fn().mockReturnThis(),
+        return createMockQueryBuilder({
           single: vi
             .fn()
             .mockResolvedValue({ data: mockSavedJob, error: null }),
-        };
+        });
       }
       return {};
     });

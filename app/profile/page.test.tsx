@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import ProfilePage from "./page";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supabase-mock";
 
 // Mock Supabase Server Client
 vi.mock("@/lib/supabase/server", () => ({
@@ -29,20 +30,12 @@ vi.mock("@/components/profile-form", () => ({
 }));
 
 describe("ProfilePage Server Component", () => {
-  let mockSupabase: any;
+  let mockSupabase: MockSupabaseClient;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockSupabase = {
-      auth: {
-        getUser: vi.fn(),
-      },
-      from: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn(),
-    };
+    mockSupabase = createMockSupabaseClient();
 
     (createClient as Mock).mockResolvedValue(mockSupabase);
   });

@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ProfileForm } from "./profile-form";
 import { createClient } from "@/lib/supabase/client";
+import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supabase-mock";
 
 // Mock Next.js router
 const mockRefresh = vi.fn();
@@ -18,7 +19,7 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 describe("ProfileForm Component", () => {
-  let mockSupabase: any;
+  let mockSupabase: MockSupabaseClient;
 
   const defaultProps = {
     userId: "user-123",
@@ -39,10 +40,7 @@ describe("ProfileForm Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockSupabase = {
-      from: vi.fn().mockReturnThis(),
-      upsert: vi.fn().mockResolvedValue({ error: null }),
-    };
+    mockSupabase = createMockSupabaseClient();
 
     (createClient as Mock).mockReturnValue(mockSupabase);
   });
