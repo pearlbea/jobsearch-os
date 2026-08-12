@@ -39,6 +39,16 @@ export function EvaluationsList({
     }
   };
 
+  const handleRowKeyDown = (
+    e: React.KeyboardEvent<HTMLDivElement>,
+    jobId: string,
+  ) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onSelectJob(jobId);
+    }
+  };
+
   if (jobs.length === 0) {
     return (
       <div className="p-6 bg-white border rounded-xl text-center text-sm text-gray-500">
@@ -70,6 +80,9 @@ export function EvaluationsList({
             <div
               key={job.id}
               onClick={() => onSelectJob(job.id)}
+              onKeyDown={(e) => handleRowKeyDown(e, job.id)}
+              role="button"
+              tabIndex={0}
               className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${
                 isSelected
                   ? "bg-blue-50/70 border-l-4 border-blue-600"
