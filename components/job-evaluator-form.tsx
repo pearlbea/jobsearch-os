@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 interface JobEvaluatorFormProps {
   onEvaluationComplete: (job: Job) => void;
   open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: (open: boolean, ...args: unknown[]) => void;
 }
 
 export function JobEvaluatorForm({
@@ -17,10 +17,19 @@ export function JobEvaluatorForm({
   open,
   onOpenChange,
 }: JobEvaluatorFormProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(true);
   const [rawDescription, setRawDescription] = useState("");
   const [jobUrl, setJobUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isOpen = open ?? uncontrolledOpen;
+
+  const handleOpenChange = (nextOpen: boolean, ...args: unknown[]) => {
+    if (open === undefined) {
+      setUncontrolledOpen(nextOpen);
+    }
+    onOpenChange?.(nextOpen, ...args);
+  };
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -61,7 +70,7 @@ export function JobEvaluatorForm({
   return (
     <Collapsible.Root
       {...(open !== undefined ? { open } : { defaultOpen: true })}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       className="border border-zinc-200 rounded-[10px]"
     >
       <div className="flex items-center justify-between px-5 py-4 sm:px-6">
@@ -69,11 +78,11 @@ export function JobEvaluatorForm({
           Evaluate a new job posting
         </h2>
         <Collapsible.Trigger className="flex items-center gap-1 text-[13px] font-semibold text-zinc-600 hover:text-zinc-900">
-          {open === false ? "New evaluation" : "Hide"}
+          {isOpen ? "Hide" : "New evaluation"}
           <ChevronDownIcon
             className={cn(
               "size-4 transition-transform",
-              open === false && "-rotate-90",
+              !isOpen && "-rotate-90",
             )}
           />
         </Collapsible.Trigger>

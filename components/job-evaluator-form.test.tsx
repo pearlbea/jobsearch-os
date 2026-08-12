@@ -195,4 +195,12 @@ describe("JobEvaluatorForm Component", () => {
 
     expect(onOpenChange).toHaveBeenCalledWith(true, expect.anything());
   });
+
+  it("updates the trigger label when toggled in uncontrolled mode", async () => {
+    const user = userEvent.setup();
+    render(<JobEvaluatorForm onEvaluationComplete={onEvaluationComplete} />);
+
+    await user.click(screen.getByRole("button", { name: /hide/i }));
+    expect(screen.getByRole("button", { name: /new evaluation/i })).toBeInTheDocument();
+  });
 });
