@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Job } from "@/types/database";
+import { JobSummary } from "@/types/database";
 
 interface EvaluationsListProps {
-  jobs: Job[];
+  jobs: JobSummary[];
   selectedJobId: string | null;
-  onSelectJob: (job: Job) => void;
+  onSelectJob: (jobId: string) => void;
   onDeleteJob: (jobId: string) => void;
 }
 
@@ -19,7 +19,7 @@ export function EvaluationsList({
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = async (e: React.MouseEvent, jobId: string) => {
-    e.stopPropagation(); // Don't trigger onSelectJob
+    e.stopPropagation();
     if (!confirm("Are you sure you want to delete this evaluation?")) return;
 
     setDeletingId(jobId);
@@ -42,7 +42,7 @@ export function EvaluationsList({
   if (jobs.length === 0) {
     return (
       <div className="p-6 bg-white border rounded-xl text-center text-sm text-gray-500">
-        No saved evaluations yet. Paste a job description above to create one.
+        No saved evaluations yet.
       </div>
     );
   }
@@ -55,7 +55,7 @@ export function EvaluationsList({
         </h3>
       </div>
 
-      <div className="divide-y max-h-[400px] overflow-y-auto">
+      <div className="divide-y max-h-[450px] overflow-y-auto">
         {jobs.map((job) => {
           const isSelected = job.id === selectedJobId;
           const score = job.match_score ?? 0;
@@ -69,12 +69,7 @@ export function EvaluationsList({
           return (
             <div
               key={job.id}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") onSelectJob(job);
-              }}
-              onClick={() => onSelectJob(job)}
+              onClick={() => onSelectJob(job.id)}
               className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${
                 isSelected
                   ? "bg-blue-50/70 border-l-4 border-blue-600"
@@ -96,7 +91,7 @@ export function EvaluationsList({
                   {job.company_name}
                 </p>
                 <p className="text-[11px] text-gray-400">
-                  Evaluated {new Date(job.created_at).toLocaleDateString()}
+                  {new Date(job.created_at).toLocaleDateString()}
                 </p>
               </div>
 
@@ -106,25 +101,8 @@ export function EvaluationsList({
                 onClick={(e) => handleDelete(e, job.id)}
                 className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                 title="Delete evaluation"
-                aria-label="Delete evaluation"
               >
-                {deletingId === job.id ? (
-                  <span className="text-xs text-gray-400">...</span>
-                ) : (
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                )}
+                {deletingId === job.id ? "..." : "🗑️"}
               </button>
             </div>
           );

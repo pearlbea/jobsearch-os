@@ -43,6 +43,15 @@ export interface Job {
   created_at: string;
   updated_at: string | null;
 }
+
+export interface JobSummary {
+  id: string;
+  role_title: string;
+  company_name: string;
+  match_score: number | null;
+  created_at: string;
+}
+
 export interface EvaluationSummary {
   match_score: number; // 0 - 100
   score_breakdown: {
