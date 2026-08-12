@@ -114,6 +114,7 @@ export function EvaluationsList({
                 onClick={(e) => handleDelete(e, job.id)}
                 className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                 title="Delete evaluation"
+                aria-label="Delete evaluation"
               >
                 {deletingId === job.id ? "..." : "🗑️"}
               </button>
