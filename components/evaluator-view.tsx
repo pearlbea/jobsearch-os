@@ -48,9 +48,11 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
 
     let cancelled = false;
 
+    const requestedJobId = jobId;
+
     async function loadActiveJob() {
       try {
-        const res = await fetch(`/api/jobs/${jobId}`);
+        const res = await fetch(`/api/jobs/${encodeURIComponent(requestedJobId)}`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to load job");
         const job = data.job as Job;
