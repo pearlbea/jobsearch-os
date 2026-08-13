@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Clock } from "lucide-react";
+import { Clock, Loader2 } from "lucide-react";
 import { Job } from "@/types/database";
 import { JobEvaluatorForm } from "@/components/job-evaluator-form";
 import { EvaluationCard } from "@/components/evaluation-card";
@@ -10,40 +10,45 @@ import { HistoryModal } from "@/components/history-modal";
 
 export function EvaluatorView() {
   return (
-    <Suspense>
-      <EvaluatorViewContent />
+    <Suspense fallback={<EvaluatorViewFallback />}>
+      <EvaluatorViewSearchParams />
     </Suspense>
   );
 }
 
-function EvaluatorViewContent() {
-  const router = useRouter();
+function EvaluatorViewFallback() {
+  return (
+    <div className="max-w-5xl mx-auto flex items-center justify-center gap-2 p-12 text-sm text-zinc-400">
+      <Loader2 className="size-4 animate-spin" />
+      Loading...
+    </div>
+  );
+}
+
+function EvaluatorViewSearchParams() {
   const searchParams = useSearchParams();
   const jobId = searchParams.get("job");
+  // Keying on jobId gives each job a fresh component instance, so state
+  // (isLoading, isFormOpen, etc.) starts correctly initialized instead of
+  // needing an Effect to reset it when the param changes.
+  return <EvaluatorViewContent key={jobId} jobId={jobId} />;
+}
+
+function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
+  const router = useRouter();
 
   const [activeJob, setActiveJob] = useState<Job | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!!jobId);
   const [notFound, setNotFound] = useState(false);
-  const [isFormOpen, setIsFormOpen] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(!jobId);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   useEffect(() => {
+    if (!jobId) return;
+
     let cancelled = false;
 
-    if (!jobId) {
-      // No job requested — don't surface the most recent evaluation, just
-      // show the form.
-      setActiveJob(null);
-      setNotFound(false);
-      setIsLoading(false);
-      setIsFormOpen(true);
-      return;
-    }
-
     async function loadActiveJob() {
-      setIsLoading(true);
-      setNotFound(false);
-
       try {
         const res = await fetch(`/api/jobs/${jobId}`);
         const data = await res.json();
@@ -59,7 +64,6 @@ function EvaluatorViewContent() {
       } catch (err) {
         console.error("Error loading evaluation:", err);
         if (!cancelled) {
-          setActiveJob(null);
           setNotFound(true);
           // Nothing to show — keep the form open so there's something to do.
           setIsFormOpen(true);
@@ -74,7 +78,6 @@ function EvaluatorViewContent() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 
   const handleEvaluationComplete = (newJob: Job) => {
