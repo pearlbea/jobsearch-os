@@ -88,7 +88,7 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
 
   const handleSelectJob = (selectedJobId: string) => {
     setIsHistoryOpen(false);
-    router.push(`/evaluator?job=${selectedJobId}`);
+    router.push(`/evaluator?job=${encodeURIComponent(selectedJobId)}`);
   };
 
   return (
