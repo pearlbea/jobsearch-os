@@ -113,6 +113,52 @@ describe("POST /api/evaluate-job", () => {
     });
   });
 
+  it("should return 403 if the user has reached the evaluation limit", async () => {
+    const mockUser = { id: "user-123" };
+    const mockProfile = {
+      full_name: "Pearl Latteier",
+      target_titles: ["Platform TPM"],
+      location_preference: "Remote",
+      resume: "Software engineer...",
+      technical_skills: ["TypeScript"],
+    };
+
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: mockUser },
+      error: null,
+    });
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === "profiles") {
+        return createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
+        });
+      }
+      if (table === "jobs") {
+        return createMockQueryBuilder({
+          eq: vi.fn().mockResolvedValue({ count: 5, error: null }),
+        });
+      }
+      return {};
+    });
+
+    const req = new NextRequest("http://localhost:3000/api/evaluate-job", {
+      method: "POST",
+      body: JSON.stringify({
+        raw_description: "Engineering Manager role at Lyric...",
+      }),
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(json).toEqual({
+      error: "You've reached the limit of 5 evaluations for this demo.",
+    });
+    expect(generateText).not.toHaveBeenCalled();
+  });
+
   it("should evaluate job and save result to database successfully", async () => {
     const mockUser = { id: "user-123" };
     const mockProfile = {

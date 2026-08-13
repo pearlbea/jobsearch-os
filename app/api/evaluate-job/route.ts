@@ -4,6 +4,8 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { generateText, Output } from "ai";
 import { compactEvaluationSchema } from "@/lib/schemas/evaluation";
 
+const MAX_EVALUATIONS_PER_USER = 5;
+
 // Helper: Strip boilerplate equal opportunity / legal footers from job descriptions
 function cleanJobDescription(text: string): string {
   return text
@@ -48,16 +50,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    // 2. Fetch story metadata only (omit full story_text to save input tokens)
+    // 2. Enforce the per-user evaluation cap before spending any tokens
+    const { count: evaluationCount, error: countError } = await supabase
+      .from("jobs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    if (countError) throw countError;
+
+    if ((evaluationCount ?? 0) >= MAX_EVALUATIONS_PER_USER) {
+      return NextResponse.json(
+        {
+          error: `You've reached the limit of ${MAX_EVALUATIONS_PER_USER} evaluations for this demo.`,
+        },
+        { status: 403 },
+      );
+    }
+
+    // 3. Fetch story metadata only (omit full story_text to save input tokens)
     const { data: stories } = await supabase
       .from("stories")
       .select("title, company, competencies")
       .eq("user_id", user.id);
 
-    // 3. Pre-process job description to drop non-essential footer text
+    // 4. Pre-process job description to drop non-essential footer text
     const cleanedDescription = cleanJobDescription(raw_description);
 
-    // 4. Prompt framing
+    // 5. Prompt framing
     const systemPrompt = `You are an dual-perspective talent evaluator: an ATS (Applicant Tracking System) parser AND an Executive Engineering Leader.
 
   EVALUATION RULES:
@@ -79,7 +98,7 @@ export async function POST(req: NextRequest) {
   Evaluate objectively and output structured JSON.
   `;
 
-    // 5. LLM Call
+    // 6. LLM Call
     const { output: evalResult } = await generateText({
       model: anthropic("claude-sonnet-5"),
       output: Output.object({ schema: compactEvaluationSchema }),
@@ -87,7 +106,7 @@ export async function POST(req: NextRequest) {
       prompt: `JOB POSTING:\n${cleanedDescription}`,
     });
 
-    // 6. Map compact keys back to full database schema before saving
+    // 7. Map compact keys back to full database schema before saving
     const fullEvaluationSummary = {
       match_score: evalResult.score,
       score_breakdown: {
