@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -11,13 +12,14 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage(null);
@@ -49,8 +51,7 @@ export default function LoginPage() {
         }
       }
     } catch (err: unknown) {
-      const text =
-        err instanceof Error ? err.message : "Something went wrong.";
+      const text = err instanceof Error ? err.message : "Something went wrong.";
       setMessage({ type: "error", text });
     } finally {
       setIsSubmitting(false);
@@ -85,10 +86,15 @@ export default function LoginPage() {
 
       <div className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-semibold text-gray-700">
+          <label
+            className="mb-1 block text-sm font-semibold text-gray-700"
+            htmlFor="email"
+          >
             Email
           </label>
           <input
+            autoComplete="email"
+            id="email"
             type="email"
             required
             value={email}
@@ -99,18 +105,42 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold text-gray-700">
+          <label
+            className="mb-1 block text-sm font-semibold text-gray-700"
+            htmlFor="password"
+          >
             Password
           </label>
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder="••••••••"
-          />
+          <div className="relative">
+            <input
+              autoComplete={mode === "sign-up" ? "new-password" : "current-password"}
+              type={isPasswordVisible ? "text" : "password"}
+              required
+              minLength={mode === "sign-up" ? 12 : undefined}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-md border px-3 py-2 pr-10 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="••••••••"
+              id="password"
+            />
+            <button
+              type="button"
+              onClick={() => setIsPasswordVisible((visible) => !visible)}
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+              aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+            >
+              {isPasswordVisible ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+          {mode === "sign-up" && (
+            <p className="mt-1 text-xs text-gray-500">
+              Must be at least 12 characters.
+            </p>
+          )}
         </div>
       </div>
 
@@ -125,7 +155,6 @@ export default function LoginPage() {
             ? "Sign in"
             : "Sign up"}
       </button>
-
       <button
         type="button"
         onClick={() => {
