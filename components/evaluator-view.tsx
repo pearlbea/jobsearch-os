@@ -1,10 +1,12 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Clock } from "lucide-react";
 import { Job } from "@/types/database";
 import { JobEvaluatorForm } from "@/components/job-evaluator-form";
 import { EvaluationCard } from "@/components/evaluation-card";
+import { HistoryModal } from "@/components/history-modal";
 
 export function EvaluatorView() {
   return (
@@ -15,6 +17,7 @@ export function EvaluatorView() {
 }
 
 function EvaluatorViewContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const jobId = searchParams.get("job");
 
@@ -22,6 +25,7 @@ function EvaluatorViewContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(true);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,17 +83,38 @@ function EvaluatorViewContent() {
     setIsFormOpen(false);
   };
 
+  const handleSelectJob = (selectedJobId: string) => {
+    setIsHistoryOpen(false);
+    router.push(`/evaluator?job=${selectedJobId}`);
+  };
+
   return (
     <div className="max-w-5xl mx-auto flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900">
-          Job Evaluator
-        </h1>
-        <p className="text-[13.5px] text-zinc-500 mt-1">
-          Evaluate job postings against your resume, competencies, and ATS
-          filters.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900">
+            Job Evaluator
+          </h1>
+          <p className="text-[13.5px] text-zinc-500 mt-1">
+            Evaluate job postings against your resume, competencies, and ATS
+            filters.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsHistoryOpen(true)}
+          className="shrink-0 flex items-center gap-1.5 px-4 h-9 border border-zinc-200 rounded-[7px] text-[13px] font-semibold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 transition-colors"
+        >
+          <Clock className="size-4" />
+          History
+        </button>
       </div>
+
+      <HistoryModal
+        open={isHistoryOpen}
+        onOpenChange={setIsHistoryOpen}
+        onSelectJob={handleSelectJob}
+      />
 
       <JobEvaluatorForm
         onEvaluationComplete={handleEvaluationComplete}

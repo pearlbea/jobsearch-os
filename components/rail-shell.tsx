@@ -1,34 +1,22 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { SignOutButton } from "@/components/sign-out-button";
-import { HistoryModal } from "@/components/history-modal";
 
 interface RailShellProps {
   userEmail: string;
   children: React.ReactNode;
 }
 
-// Items with an `href` are real routes; the item without one (History) opens
-// a modal in place instead of navigating away.
-const NAV_ITEMS: Array<{ label: string; href?: string }> = [
+const NAV_ITEMS: Array<{ label: string; href: string }> = [
   { label: "Evaluate", href: "/evaluator" },
-  { label: "History" },
   { label: "Profile", href: "/profile" },
 ];
 
 export function RailShell({ userEmail, children }: RailShellProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-
-  const handleSelectJob = (jobId: string) => {
-    setIsHistoryOpen(false);
-    router.push(`/evaluator?job=${jobId}`);
-  };
 
   return (
     <div className="flex flex-col sm:flex-row sm:min-h-full">
@@ -42,29 +30,16 @@ export function RailShell({ userEmail, children }: RailShellProps) {
         </div>
         <div className="flex gap-1.5 overflow-x-auto">
           {NAV_ITEMS.map((item) => {
-            const isActive = item.href ? pathname === item.href : isHistoryOpen;
+            const isActive = pathname === item.href;
             const className = cn(
               "shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold",
               isActive ? "bg-zinc-900 text-white" : "text-zinc-600",
             );
 
-            if (item.href) {
-              return (
-                <Link key={item.label} href={item.href} className={className}>
-                  {item.label}
-                </Link>
-              );
-            }
-
             return (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => setIsHistoryOpen(true)}
-                className={className}
-              >
+              <Link key={item.label} href={item.href} className={className}>
                 {item.label}
-              </button>
+              </Link>
             );
           })}
         </div>
@@ -80,7 +55,7 @@ export function RailShell({ userEmail, children }: RailShellProps) {
           </Link>
           <nav className="flex flex-col gap-0.5">
             {NAV_ITEMS.map((item) => {
-              const isActive = item.href ? pathname === item.href : isHistoryOpen;
+              const isActive = pathname === item.href;
               const className = cn(
                 "flex items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-[13.5px]",
                 isActive
@@ -96,25 +71,11 @@ export function RailShell({ userEmail, children }: RailShellProps) {
                 />
               );
 
-              if (item.href) {
-                return (
-                  <Link key={item.label} href={item.href} className={className}>
-                    {dot}
-                    {item.label}
-                  </Link>
-                );
-              }
-
               return (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => setIsHistoryOpen(true)}
-                  className={className}
-                >
+                <Link key={item.label} href={item.href} className={className}>
                   {dot}
                   {item.label}
-                </button>
+                </Link>
               );
             })}
           </nav>
@@ -126,12 +87,6 @@ export function RailShell({ userEmail, children }: RailShellProps) {
       </div>
 
       <main className="flex-1 px-4 py-6 sm:px-8 sm:py-8">{children}</main>
-
-      <HistoryModal
-        open={isHistoryOpen}
-        onOpenChange={setIsHistoryOpen}
-        onSelectJob={handleSelectJob}
-      />
     </div>
   );
 }

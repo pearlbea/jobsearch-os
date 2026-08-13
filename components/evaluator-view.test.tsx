@@ -1,16 +1,19 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { EvaluatorView } from "./evaluator-view";
 import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supabase-mock";
 
 let mockSupabase: MockSupabaseClient;
 let searchParamValue: string | null = null;
+const mockPush = vi.fn();
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: vi.fn(() => mockSupabase),
 }));
 
 vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
   useSearchParams: () => ({
     get: (key: string) => (key === "job" ? searchParamValue : null),
   }),
@@ -55,30 +58,7 @@ describe("EvaluatorView", () => {
     mockSupabase = createMockSupabaseClient();
   });
 
-  it("loads the most recently created job when no job param is present", async () => {
-    mockSupabase.single.mockResolvedValue({ data: mockJob, error: null });
-
-    render(<EvaluatorView />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Engineering Manager")).toBeInTheDocument();
-    });
-    expect(mockSupabase.order).toHaveBeenCalledWith("created_at", {
-      ascending: false,
-    });
-    // A result is showing, so the form collapses out of the way.
-    expect(screen.getByTestId("job-evaluator-form")).toHaveAttribute(
-      "data-open",
-      "false",
-    );
-  });
-
-  it("shows a friendly empty state when there are no saved evaluations", async () => {
-    mockSupabase.single.mockResolvedValue({
-      data: null,
-      error: new Error("no rows"),
-    });
-
+  it("shows the empty state and never queries Supabase when no job param is present", async () => {
     render(<EvaluatorView />);
 
     await waitFor(() => {
@@ -91,6 +71,7 @@ describe("EvaluatorView", () => {
       "data-open",
       "true",
     );
+    expect(mockSupabase.from).not.toHaveBeenCalled();
   });
 
   it("loads the job referenced by the job search param via the API", async () => {
@@ -129,6 +110,61 @@ describe("EvaluatorView", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/couldn't be found/i)).toBeInTheDocument();
+    });
+  });
+
+  it("opens the history modal when the History button is clicked", async () => {
+    mockSupabase.from.mockImplementation(() => ({
+      select: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({ data: [], error: null }),
+    }));
+
+    const user = userEvent.setup();
+    render(<EvaluatorView />);
+
+    expect(
+      screen.queryByRole("heading", { name: "History" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "History" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "History" })).toBeInTheDocument();
+    });
+  });
+
+  it("navigates to the selected evaluation and closes the modal", async () => {
+    mockSupabase.from.mockImplementation(() => ({
+      select: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({
+        data: [
+          {
+            id: "job-1",
+            role_title: "Engineering Manager",
+            company_name: "Acme Corp",
+            match_score: 85,
+            created_at: "2026-08-01T00:00:00Z",
+          },
+        ],
+        error: null,
+      }),
+    }));
+
+    const user = userEvent.setup();
+    render(<EvaluatorView />);
+
+    await user.click(screen.getByRole("button", { name: "History" }));
+    await waitFor(() => {
+      expect(screen.getByText("Engineering Manager")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText("Engineering Manager"));
+
+    expect(mockPush).toHaveBeenCalledWith("/evaluator?job=job-1");
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("heading", { name: "History" }),
+      ).not.toBeInTheDocument();
     });
   });
 });
