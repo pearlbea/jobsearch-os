@@ -3,7 +3,6 @@
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Job } from "@/types/database";
-import { createClient } from "@/lib/supabase/client";
 import { JobEvaluatorForm } from "@/components/job-evaluator-form";
 import { EvaluationCard } from "@/components/evaluation-card";
 
@@ -24,34 +23,28 @@ function EvaluatorViewContent() {
   const [notFound, setNotFound] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(true);
 
-  const supabase = createClient();
-
   useEffect(() => {
     let cancelled = false;
+
+    if (!jobId) {
+      // No job requested — don't surface the most recent evaluation, just
+      // show the form.
+      setActiveJob(null);
+      setNotFound(false);
+      setIsLoading(false);
+      setIsFormOpen(true);
+      return;
+    }
 
     async function loadActiveJob() {
       setIsLoading(true);
       setNotFound(false);
 
       try {
-        let job: Job;
-
-        if (jobId) {
-          const res = await fetch(`/api/jobs/${jobId}`);
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Failed to load job");
-          job = data.job;
-        } else {
-          const { data, error } = await supabase
-            .from("jobs")
-            .select("*")
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .single();
-
-          if (error) throw error;
-          job = data as Job;
-        }
+        const res = await fetch(`/api/jobs/${jobId}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to load job");
+        const job = data.job as Job;
 
         if (!cancelled) {
           setActiveJob(job);
@@ -63,10 +56,7 @@ function EvaluatorViewContent() {
         console.error("Error loading evaluation:", err);
         if (!cancelled) {
           setActiveJob(null);
-          // Only surface "not found" when a specific job was requested and
-          // missing — an empty table on the default (no jobId) path just
-          // means the user has no evaluations yet.
-          setNotFound(Boolean(jobId));
+          setNotFound(true);
           // Nothing to show — keep the form open so there's something to do.
           setIsFormOpen(true);
         }
