@@ -55,7 +55,10 @@ describe("Home page", () => {
       data: { user: { id: "user-123", email: "pearl@example.com" } },
       error: null,
     });
-    mockSupabase.single.mockResolvedValue({ data: null, error: null });
+    mockSupabase.single.mockResolvedValue({
+      data: null,
+      error: { code: "PGRST116", message: "no rows found" },
+    });
 
     const page = await Home();
     render(page);
