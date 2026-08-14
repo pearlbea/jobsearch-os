@@ -1,7 +1,7 @@
 ---
 name: review-maintainability
 description: Reviews code for unnecessary complexity, duplication, tight coupling, and fragile or hard-to-understand areas. Use proactively on diffs to flag what will be costly to change safely later.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: inherit
 ---
 

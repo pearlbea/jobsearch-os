@@ -3,7 +3,7 @@ description: Run the four review agents (contract, performance, concurrency, mai
 argument-hint: "[base-ref, default: main]"
 ---
 
-Diff the current branch against `${ARGUMENTS:-main}` (use `git diff <merge-base>...HEAD`, i.e. only what this branch has added). If the diff is empty, say so and stop.
+Diff the current branch against `${ARGUMENTS:-main}` using a merge-base diff (e.g. `git diff "${ARGUMENTS:-main}...HEAD"`, i.e. only what this branch has added). If the diff is empty, say so and stop.
 
 Otherwise, launch these four agents **in parallel** — a single message with four Agent tool calls — passing each the same diff:
 

@@ -1,7 +1,7 @@
 ---
 name: review-concurrency
 description: Reviews code for shared mutable state, synchronization, and externally visible side effects that could break under concurrent execution. Use proactively on diffs touching shared state, caches, async code, or request handlers.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: inherit
 ---
 

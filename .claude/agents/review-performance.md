@@ -1,7 +1,7 @@
 ---
 name: review-performance
 description: Reviews code for algorithmic complexity and scalability under growing input size or request volume. Use proactively on diffs touching data access, loops, or request-handling paths.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: inherit
 ---
 

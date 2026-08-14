@@ -1,7 +1,7 @@
 ---
 name: review-contract
 description: Reviews code for unstated assumptions, unhandled boundary conditions, and unclear failure handling. Use proactively on diffs to check whether the implementation's implicit contract is enforced by code or tests.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: inherit
 ---
 
