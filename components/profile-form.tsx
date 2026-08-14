@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types/database";
+import { Button } from "@/components/ui/button";
 
 interface ProfileFormProps {
   initialProfile: Profile | null;
@@ -22,7 +23,6 @@ export function ProfileForm({
   const [fullName, setFullName] = useState(initialProfile?.full_name || "");
   const [targetTitles, setTargetTitles] = useState<string[]>(
     initialProfile?.target_titles || [
-      "Platform TPM",
       "Engineering Manager",
       "Senior Full-Stack Engineer",
     ],
@@ -32,7 +32,7 @@ export function ProfileForm({
   const [locationPreference, setLocationPreference] = useState(
     initialProfile?.location_preference || "Remote (or Tulsa, OK)",
   );
-  const [resumeText, setresumeText] = useState(initialProfile?.resume || "");
+  const [resumeText, setResumeText] = useState(initialProfile?.resume || "");
 
   const [technicalSkills, setTechnicalSkills] = useState<string[]>(
     initialProfile?.technical_skills || [
@@ -41,7 +41,6 @@ export function ProfileForm({
       "Supabase",
       "Python",
       "Go",
-      "HIPAA/WCAG",
     ],
   );
   const [newSkillInput, setNewSkillInput] = useState("");
@@ -99,12 +98,11 @@ export function ProfileForm({
 
       setMessage({ type: "success", text: "Profile updated successfully!" });
       router.refresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Profile save error:", err);
-      setMessage({
-        type: "error",
-        text: err.message || "Failed to save profile.",
-      });
+      const text =
+        err instanceof Error ? err.message : "Failed to save profile.";
+      setMessage({ type: "error", text });
     } finally {
       setIsSubmitting(false);
     }
@@ -113,11 +111,13 @@ export function ProfileForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-3xl mx-auto p-6 space-y-8 bg-white border rounded-xl shadow-sm"
+      className="max-w-3xl mx-auto p-8 space-y-8 bg-card border border-border rounded-2xl shadow-[0_6px_20px_rgba(60,45,20,0.05)]"
     >
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Candidate Profile</h2>
-        <p className="text-sm text-gray-500">
+        <h2 className="text-2xl font-extrabold tracking-tight text-foreground">
+          Candidate Profile
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
           This data powers the AI evaluation engine when scoring job postings
           against your background.
         </p>
@@ -138,7 +138,7 @@ export function ProfileForm({
       {/* Name & Location */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
+          <label className="block text-[13px] font-semibold text-[#5C564C] mb-1.5">
             Full Name
           </label>
           <input
@@ -146,20 +146,20 @@ export function ProfileForm({
             required
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
-            placeholder="e.g. Pearl Latteier"
+            className="w-full px-3.5 py-2 border border-[#E2DACB] rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary"
+            placeholder="e.g. Jane Doe"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
+          <label className="block text-[13px] font-semibold text-[#5C564C] mb-1.5">
             Location Preference
           </label>
           <input
             type="text"
             value={locationPreference}
             onChange={(e) => setLocationPreference(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+            className="w-full px-3.5 py-2 border border-[#E2DACB] rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary"
             placeholder="e.g. Remote or Tulsa, OK"
           />
         </div>
@@ -167,10 +167,10 @@ export function ProfileForm({
 
       {/* Target Titles (Array Input) */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1">
+        <label className="block text-[13px] font-semibold text-[#5C564C] mb-1.5">
           Target Roles / Titles
         </label>
-        <div className="flex gap-2 mb-2">
+        <div className="flex gap-2 mb-2.5">
           <input
             type="text"
             value={newTitleInput}
@@ -187,10 +187,11 @@ export function ProfileForm({
               }
             }}
             placeholder="Add title (e.g. Technical Program Manager) and press Enter"
-            className="flex-1 px-3 py-2 border rounded-md shadow-sm text-sm"
+            className="flex-1 px-3.5 py-2 border border-[#E2DACB] rounded-[10px] text-sm text-foreground"
           />
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={() =>
               addTag(
                 newTitleInput,
@@ -199,22 +200,21 @@ export function ProfileForm({
                 setTargetTitles,
               )
             }
-            className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200"
           >
             Add
-          </button>
+          </Button>
         </div>
         <div className="flex flex-wrap gap-2">
           {targetTitles.map((title) => (
             <span
               key={title}
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-accent text-primary"
             >
               {title}
               <button
                 type="button"
                 onClick={() => removeTag(title, targetTitles, setTargetTitles)}
-                className="ml-2 text-blue-600 hover:text-blue-900 font-bold"
+                className="ml-2 text-primary/70 hover:text-primary font-bold"
               >
                 ×
               </button>
@@ -223,26 +223,26 @@ export function ProfileForm({
         </div>
       </div>
 
-      {/* Executive Summary */}
+      {/* Resume */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1">
-          Executive Summary / Core Background
+        <label className="block text-[13px] font-semibold text-[#5C564C] mb-1.5">
+          Resume / Core Background
         </label>
         <textarea
           rows={6}
           value={resumeText}
-          onChange={(e) => setresumeText(e.target.value)}
-          placeholder="Paste or write your master executive summary highlighting your engineering, leadership, and domain expertise..."
-          className="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm font-sans"
+          onChange={(e) => setResumeText(e.target.value)}
+          placeholder="Paste your resume here"
+          className="w-full px-3.5 py-3 border border-[#E2DACB] rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
         />
       </div>
 
       {/* Technical & Operational Skills */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1">
+        <label className="block text-[13px] font-semibold text-[#5C564C] mb-1.5">
           Core Competencies & Skills
         </label>
-        <div className="flex gap-2 mb-2">
+        <div className="flex gap-2 mb-2.5">
           <input
             type="text"
             value={newSkillInput}
@@ -259,10 +259,11 @@ export function ProfileForm({
               }
             }}
             placeholder="Add skill (e.g. DevEx, HIPAA, Go, Linear) and press Enter"
-            className="flex-1 px-3 py-2 border rounded-md shadow-sm text-sm"
+            className="flex-1 px-3.5 py-2 border border-[#E2DACB] rounded-[10px] text-sm text-foreground"
           />
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={() =>
               addTag(
                 newSkillInput,
@@ -271,16 +272,15 @@ export function ProfileForm({
                 setTechnicalSkills,
               )
             }
-            className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200"
           >
             Add
-          </button>
+          </Button>
         </div>
         <div className="flex flex-wrap gap-2">
           {technicalSkills.map((skill) => (
             <span
               key={skill}
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground"
             >
               {skill}
               <button
@@ -288,7 +288,7 @@ export function ProfileForm({
                 onClick={() =>
                   removeTag(skill, technicalSkills, setTechnicalSkills)
                 }
-                className="ml-2 text-gray-500 hover:text-gray-800 font-bold"
+                className="ml-2 text-muted-foreground hover:text-foreground font-bold"
               >
                 ×
               </button>
@@ -298,14 +298,15 @@ export function ProfileForm({
       </div>
 
       {/* Submit Button */}
-      <div className="pt-4 border-t flex justify-end">
-        <button
+      <div className="pt-4 border-t border-border flex justify-end">
+        <Button
           type="submit"
           disabled={isSubmitting}
-          className="px-6 py-2 bg-blue-600 text-white font-medium text-sm rounded-md shadow hover:bg-blue-700 disabled:opacity-50"
+          size="lg"
+          className="px-6"
         >
           {isSubmitting ? "Saving Profile..." : "Save Profile"}
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -2,24 +2,36 @@ export type ScoreBand = "low" | "medium" | "high";
 
 export interface BandStyle {
   label: string;
-  /** Hex value for SVG stroke, where Tailwind classes don't apply. */
-  ring: string;
+  /** Hex values for the score badge, where Tailwind tokens don't apply. */
+  badgeBg: string;
+  badgeColor: string;
+  /** Hex value for individual breakdown bars (label text + fill). */
+  barColor: string;
 }
 
-// Badge colors for each band live in components/ui/badge.tsx's cva variants
-// (variant names match ScoreBand 1:1) — this only owns the ring hex + label.
+// Badge colors for each band live here. components/ui/badge.tsx's
+// low/medium/high variants read badgeBg/badgeColor from this map directly
+// (rather than their own Tailwind classes), so a band renders identically
+// whether it's this Badge component (list rows) or the inline styles used
+// elsewhere (main score badge, ATS status pill).
 export const bandStyles: Record<ScoreBand, BandStyle> = {
   low: {
     label: "Low fit",
-    ring: "#e11d48",
+    badgeBg: "#FDECEC",
+    badgeColor: "#C0392B",
+    barColor: "#C0392B",
   },
   medium: {
     label: "Medium fit",
-    ring: "#f59e0b",
+    badgeBg: "#FEF3C7",
+    badgeColor: "#92400E",
+    barColor: "#9D681B",
   },
   high: {
     label: "High fit",
-    ring: "#22c55e",
+    badgeBg: "#EAF7EF",
+    badgeColor: "#1E7A4C",
+    barColor: "#1E7A4C",
   },
 };
 

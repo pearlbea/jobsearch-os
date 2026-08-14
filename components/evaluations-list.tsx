@@ -42,23 +42,15 @@ export function EvaluationsList({
     }
   };
 
-  if (jobs.length === 0) {
-    return (
-      <div className="p-6 bg-white border border-zinc-200 rounded-lg text-center text-sm text-zinc-500">
-        No saved evaluations yet.
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-white border border-zinc-200 rounded-lg overflow-hidden">
-      <div className="px-4 py-3 border-b border-zinc-100 bg-zinc-50 flex justify-between items-center">
-        <h3 className="font-bold text-zinc-900 text-sm">
+    <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-[0_6px_20px_rgba(60,45,20,0.05)]">
+      <div className="px-5 py-4 border-b border-border">
+        <h2 className="text-[13px] font-bold text-[#5C564C] uppercase tracking-wide">
           Saved Evaluations ({jobs.length})
-        </h3>
+        </h2>
       </div>
 
-      <div className="divide-y divide-zinc-100">
+      <div className="divide-y divide-[#F3EEE4]">
         {jobs.map((job) => {
           const isSelected = job.id === selectedJobId;
           const score = job.match_score ?? 0;
@@ -67,28 +59,28 @@ export function EvaluationsList({
           return (
             <div
               key={job.id}
-              className={`flex items-center justify-between pr-4 transition-colors ${
+              className={`flex items-center justify-between pr-3 transition-colors border-l-[3px] ${
                 isSelected
-                  ? "bg-indigo-50/70 border-l-4 border-indigo-600"
-                  : "hover:bg-zinc-50"
+                  ? "bg-accent border-primary"
+                  : "border-transparent hover:bg-background"
               }`}
             >
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => onSelectJob(job.id)}
-                className="h-auto flex-1 flex-col items-start justify-start gap-0 space-y-1 whitespace-normal rounded-none p-4 text-left"
+                className="h-auto flex-1 flex-col items-start justify-start gap-0 space-y-1.5 whitespace-normal rounded-none p-4 text-left"
               >
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-zinc-900 text-sm">
+                  <span className="font-bold text-foreground text-sm leading-snug">
                     {job.role_title}
                   </span>
                   <Badge variant={band}>{score}%</Badge>
                 </div>
-                <p className="text-xs text-zinc-500 font-medium">
+                <p className="text-[13px] text-muted-foreground font-medium">
                   {job.company_name}
                 </p>
-                <p className="text-[11px] text-zinc-400">
+                <p className="text-[11px] text-muted-foreground">
                   {new Date(job.created_at).toLocaleDateString()}
                 </p>
               </Button>
@@ -99,7 +91,7 @@ export function EvaluationsList({
                 size="icon-sm"
                 disabled={deletingId === job.id}
                 onClick={(e) => handleDelete(e, job.id)}
-                className="text-zinc-400 hover:bg-red-50 hover:text-red-600"
+                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 title="Delete evaluation"
                 aria-label="Delete evaluation"
               >

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,17 +32,20 @@ export default function LoginPage() {
           password,
         });
         if (error) throw error;
-        router.push("/profile");
+        router.push("/");
         router.refresh();
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         });
         if (error) throw error;
 
         if (data.session) {
-          router.push("/profile");
+          router.push("/");
           router.refresh();
         } else {
           setMessage({
@@ -61,13 +65,13 @@ export default function LoginPage() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full max-w-sm mx-auto space-y-6 rounded-xl border bg-white p-6 shadow-sm"
+      className="w-full max-w-sm mx-auto space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm"
     >
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-foreground">
           {mode === "sign-in" ? "Sign in" : "Create an account"}
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Access your job search dashboard.
         </p>
       </div>
@@ -87,7 +91,7 @@ export default function LoginPage() {
       <div className="space-y-4">
         <div>
           <label
-            className="mb-1 block text-sm font-semibold text-gray-700"
+            className="mb-1 block text-sm font-semibold text-foreground"
             htmlFor="email"
           >
             Email
@@ -99,14 +103,14 @@ export default function LoginPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-primary"
             placeholder="you@example.com"
           />
         </div>
 
         <div>
           <label
-            className="mb-1 block text-sm font-semibold text-gray-700"
+            className="mb-1 block text-sm font-semibold text-foreground"
             htmlFor="password"
           >
             Password
@@ -119,14 +123,14 @@ export default function LoginPage() {
               minLength={mode === "sign-up" ? 12 : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 pr-10 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-md border border-border px-3 py-2 pr-10 text-sm shadow-sm focus:border-primary focus:ring-primary"
               placeholder="••••••••"
               id="password"
             />
             <button
               type="button"
               onClick={() => setIsPasswordVisible((visible) => !visible)}
-              className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
               aria-label={isPasswordVisible ? "Hide password" : "Show password"}
             >
               {isPasswordVisible ? (
@@ -137,31 +141,27 @@ export default function LoginPage() {
             </button>
           </div>
           {mode === "sign-up" && (
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Must be at least 12 characters.
             </p>
           )}
         </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 disabled:opacity-50"
-      >
+      <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting
           ? "Please wait..."
           : mode === "sign-in"
             ? "Sign in"
             : "Sign up"}
-      </button>
+      </Button>
       <button
         type="button"
         onClick={() => {
           setMessage(null);
           setMode(mode === "sign-in" ? "sign-up" : "sign-in");
         }}
-        className="w-full text-center text-sm text-gray-500 hover:text-gray-700"
+        className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
       >
         {mode === "sign-in"
           ? "Need an account? Sign up"

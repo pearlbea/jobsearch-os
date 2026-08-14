@@ -126,9 +126,9 @@ describe("EvaluationCard Component", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the ATS keyword check only when ats_analysis is present", () => {
+  it("renders the ATS filter simulation only when ats_analysis is present", () => {
     const { rerender } = render(<EvaluationCard job={baseJob} />);
-    expect(screen.queryByText(/ATS keyword check/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ATS Filter Simulation/i)).not.toBeInTheDocument();
 
     rerender(
       <EvaluationCard
@@ -146,11 +146,10 @@ describe("EvaluationCard Component", () => {
       />,
     );
 
-    expect(screen.getByText(/ATS keyword check/i)).toBeInTheDocument();
-    expect(screen.getByText("2 missing")).toBeInTheDocument();
+    expect(screen.getByText(/ATS Filter Simulation/i)).toBeInTheDocument();
+    expect(screen.getByText("Medium ATS Pass Rate")).toBeInTheDocument();
     expect(screen.getByText("Kubernetes")).toBeInTheDocument();
     expect(screen.getByText("GraphQL")).toBeInTheDocument();
-    expect(screen.getAllByText("Missing")).toHaveLength(2);
   });
 
   it("has no detectable accessibility violations", async () => {

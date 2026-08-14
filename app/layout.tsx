@@ -2,9 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { Header } from "@/components/header";
-import { RailShell } from "@/components/rail-shell";
-import { createClient } from "@/lib/supabase/server";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -24,17 +21,13 @@ export const metadata: Metadata = {
     "Evaluate job postings against your profile and track your search.",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
       className={cn(
         "h-full",
+        "bg-background",
         "antialiased",
         geistSans.variable,
         geistMono.variable,
@@ -42,17 +35,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         inter.variable,
       )}
     >
-      <body className="min-h-full max-w-7xl mx-auto flex flex-col">
-        {user ? (
-          <RailShell userEmail={user.email ?? ""}>{children}</RailShell>
-        ) : (
-          <>
-            <Header />
-            <main className="flex-1 px-4 py-10 max-w-2xl mx-auto">
-              {children}
-            </main>
-          </>
-        )}
+      <body className="min-h-full max-w-7xl mx-auto flex flex-col bg-background text-foreground">
+        {children}
       </body>
     </html>
   );
