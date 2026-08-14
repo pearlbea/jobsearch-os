@@ -100,7 +100,7 @@ export default async function Home() {
             </p>
             <div className="flex items-center gap-4">
               <Button
-                render={<Link href="/profile" />}
+                render={<Link href={loggedIn ? "/profile" : "/login?mode=sign-up"} />}
                 nativeButton={false}
                 size="lg"
                 className="px-6"
