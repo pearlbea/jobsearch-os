@@ -17,6 +17,14 @@ describe("Header", () => {
     );
   });
 
+  it("hides the sign-in control when showSignIn is false", () => {
+    render(<Header showSignIn={false} />);
+
+    expect(
+      screen.queryByRole("button", { name: "Sign in" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("has no detectable accessibility violations", async () => {
     const { container } = render(<Header />);
 
