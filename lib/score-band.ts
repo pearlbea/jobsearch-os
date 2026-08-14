@@ -9,9 +9,11 @@ export interface BandStyle {
   barColor: string;
 }
 
-// Badge colors for each band live here; components/ui/badge.tsx's cva
-// variants (variant names match ScoreBand 1:1) cover everywhere else a band
-// needs color (list rows, ATS status pill).
+// Badge colors for each band live here. components/ui/badge.tsx's
+// low/medium/high variants read badgeBg/badgeColor from this map directly
+// (rather than their own Tailwind classes), so a band renders identically
+// whether it's this Badge component (list rows) or the inline styles used
+// elsewhere (main score badge, ATS status pill).
 export const bandStyles: Record<ScoreBand, BandStyle> = {
   low: {
     label: "Low fit",
