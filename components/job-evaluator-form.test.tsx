@@ -166,41 +166,4 @@ describe("JobEvaluatorForm Component", () => {
 
     expect(results.violations).toEqual([]);
   });
-
-  it("hides the fields and shows a 'New evaluation' trigger when collapsed", () => {
-    render(
-      <JobEvaluatorForm
-        onEvaluationComplete={onEvaluationComplete}
-        open={false}
-        onOpenChange={vi.fn()}
-      />,
-    );
-
-    expect(screen.queryByLabelText(/raw job description text/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /new evaluation/i })).toBeInTheDocument();
-  });
-
-  it("calls onOpenChange when the collapse trigger is clicked", async () => {
-    const onOpenChange = vi.fn();
-    const user = userEvent.setup();
-    render(
-      <JobEvaluatorForm
-        onEvaluationComplete={onEvaluationComplete}
-        open={false}
-        onOpenChange={onOpenChange}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: /new evaluation/i }));
-
-    expect(onOpenChange).toHaveBeenCalledWith(true, expect.anything());
-  });
-
-  it("updates the trigger label when toggled in uncontrolled mode", async () => {
-    const user = userEvent.setup();
-    render(<JobEvaluatorForm onEvaluationComplete={onEvaluationComplete} />);
-
-    await user.click(screen.getByRole("button", { name: /hide/i }));
-    expect(screen.getByRole("button", { name: /new evaluation/i })).toBeInTheDocument();
-  });
 });

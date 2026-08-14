@@ -1,7 +1,5 @@
 import { Job, EvaluationSummary } from "@/types/database";
-import { ScoreRing } from "@/components/score-ring";
 import { AtsKeywordTable } from "@/components/ats-keyword-table";
-import { Badge } from "@/components/ui/badge";
 import { bandStyles, getScoreBand } from "@/lib/score-band";
 
 interface EvaluationCardProps {
@@ -13,7 +11,7 @@ export function EvaluationCard({ job }: EvaluationCardProps) {
 
   if (!evalData) {
     return (
-      <div className="p-6 bg-white border border-zinc-200 rounded-lg text-zinc-500 text-sm">
+      <div className="p-6 bg-card border border-border rounded-lg text-muted-foreground text-sm">
         No evaluation summary available for this job.
       </div>
     );
@@ -33,107 +31,116 @@ export function EvaluationCard({ job }: EvaluationCardProps) {
   // evaluation_summary copy, which can be missing on older rows.
   const matchScore = job.match_score ?? evalData.match_score ?? 0;
   const band = getScoreBand(matchScore);
+  const badge = bandStyles[band];
 
   return (
-    <div className="flex flex-col md:flex-row md:items-start gap-6">
-      {/* Score column */}
-      <div className="md:w-[280px] md:shrink-0 border border-zinc-200 rounded-[10px] p-5 flex flex-col gap-4">
+    <div className="bg-card border border-border rounded-2xl p-8 shadow-[0_6px_20px_rgba(60,45,20,0.05)]">
+      <div className="flex justify-between items-start gap-4 mb-6">
         <div>
-          <h2 className="text-base font-extrabold tracking-tight text-zinc-900">
+          <h2 className="text-2xl font-extrabold tracking-tight text-foreground mb-1">
             {job.role_title}
           </h2>
-          <p className="text-[12.5px] text-zinc-500 mt-0.5">
-            {job.company_name}
-          </p>
-          <p className="text-xs text-zinc-400 mt-0.5">
-            {job.location || "Location not specified"}
-          </p>
-          {(parsed_requirements?.is_remote || parsed_requirements?.salary_range) && (
-            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-              {parsed_requirements?.is_remote && (
-                <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[11px] font-medium">
-                  Remote
-                </span>
-              )}
-              {parsed_requirements?.salary_range && (
-                <span className="px-2 py-0.5 rounded bg-zinc-100 text-zinc-600 text-[11px] font-medium">
-                  {parsed_requirements.salary_range}
-                </span>
-              )}
-            </div>
-          )}
+          <div className="text-[15px] text-[#5C564C] mb-2">{job.company_name}</div>
+          <div className="text-[13px] text-muted-foreground flex items-center gap-2 flex-wrap">
+            <span>{job.location || "Location not specified"}</span>
+            {parsed_requirements?.is_remote && (
+              <span className="px-2 py-0.5 rounded bg-accent text-primary text-[11px] font-semibold">
+                Remote
+              </span>
+            )}
+            {parsed_requirements?.salary_range && (
+              <span className="px-2 py-0.5 rounded bg-secondary text-secondary-foreground text-[11px] font-medium">
+                {parsed_requirements.salary_range}
+              </span>
+            )}
+          </div>
         </div>
-
-        <div className="flex flex-col items-center gap-2 py-3.5 border-t border-b border-zinc-100">
-          <ScoreRing score={matchScore} />
-          <Badge variant={band}>{bandStyles[band].label}</Badge>
-        </div>
-
-        <div className="flex flex-col gap-2.5">
-          <ScoreBar label="Technical" score={score_breakdown?.technical_match || 0} />
-          <ScoreBar label="Domain" score={score_breakdown?.domain_match || 0} />
-          <ScoreBar label="Leadership" score={score_breakdown?.leadership_match || 0} />
+        <div
+          className="text-center rounded-xl px-5.5 py-3 min-w-[100px] shrink-0"
+          style={{ background: badge.badgeBg, border: `1px solid ${badge.badgeColor}33` }}
+        >
+          <div className="text-2xl font-extrabold leading-none" style={{ color: badge.badgeColor }}>
+            {matchScore}%
+          </div>
+          <div
+            className="text-[10px] font-bold tracking-wide mt-1"
+            style={{ color: badge.badgeColor }}
+          >
+            MATCH SCORE
+          </div>
         </div>
       </div>
 
-      {/* Report column */}
-      <div className="flex-1 flex flex-col gap-4">
-        <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4.5 py-4">
-          <h3 className="text-[12.5px] font-bold text-indigo-700 mb-1.5">
-            Recommended positioning strategy
-          </h3>
-          <p className="text-[13.5px] leading-relaxed text-indigo-800">
-            {positioning_advice}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="border border-zinc-200 rounded-lg px-4.5 py-4">
-            <h4 className="text-[13px] font-bold text-green-700 mb-2.5">
-              Key matching strengths
-            </h4>
-            <ul className="flex flex-col gap-2 text-[13px] text-zinc-700 leading-relaxed">
-              {key_strengths?.map((strength, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="text-green-500 font-bold">＋</span>
-                  <span>{strength}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="border border-zinc-200 rounded-lg px-4.5 py-4">
-            <h4 className="text-[13px] font-bold text-amber-700 mb-2.5">
-              Potential gaps / friction
-            </h4>
-            <ul className="flex flex-col gap-2 text-[13px] text-zinc-700 leading-relaxed">
-              {potential_gaps?.map((gap, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="text-amber-500 font-bold">－</span>
-                  <span>{gap}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {ats_analysis && <AtsKeywordTable atsAnalysis={ats_analysis} />}
+      <div className="text-xs font-bold text-muted-foreground tracking-wide mb-3">
+        SCORE BREAKDOWN
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
+        <ScoreBar label="Technical Match" score={score_breakdown?.technical_match || 0} />
+        <ScoreBar label="Domain Match" score={score_breakdown?.domain_match || 0} />
+        <ScoreBar label="Leadership / Scope" score={score_breakdown?.leadership_match || 0} />
+      </div>
+
+      <div className="bg-background border-l-[3px] border-primary rounded-[10px] px-5 py-4 mb-7">
+        <h3 className="text-[13px] font-bold text-foreground mb-1.5">
+          Recommended Positioning Strategy
+        </h3>
+        <p className="text-sm leading-relaxed text-[#5C564C]">{positioning_advice}</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+        <div>
+          <h4 className="text-[13px] font-bold mb-3" style={{ color: "#1E7A4C" }}>
+            Key Matching Strengths
+          </h4>
+          <ul className="flex flex-col gap-2.5 text-sm text-[#5C564C] leading-relaxed">
+            {key_strengths?.map((strength, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span style={{ color: "#1E7A4C" }} className="mt-0.5">
+                  ●
+                </span>
+                <span>{strength}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="text-[13px] font-bold mb-3" style={{ color: "#9D681B" }}>
+            Potential Gaps / Friction Areas
+          </h4>
+          <ul className="flex flex-col gap-2.5 text-sm text-[#5C564C] leading-relaxed">
+            {potential_gaps?.map((gap, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span style={{ color: "#9D681B" }} className="mt-0.5">
+                  ●
+                </span>
+                <span>{gap}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {ats_analysis && <AtsKeywordTable atsAnalysis={ats_analysis} />}
     </div>
   );
 }
 
 function ScoreBar({ label, score }: { label: string; score: number }) {
+  const color = bandStyles[getScoreBand(score)].barColor;
+
   return (
-    <div>
-      <div className="flex justify-between text-xs font-semibold text-zinc-900 mb-1.5">
-        <span>{label}</span>
-        <span className="text-zinc-500 font-normal">{score}%</span>
+    <div className="bg-background rounded-[10px] px-4 py-3.5">
+      <div className="flex justify-between text-[13px] mb-2">
+        <span className="font-semibold text-[#5C564C]">{label}</span>
+        <span className="font-bold" style={{ color }}>
+          {score}%
+        </span>
       </div>
-      <div className="h-[5px] rounded-full bg-zinc-100 overflow-hidden">
+      <div className="h-1.5 rounded-full bg-border overflow-hidden">
         <div
-          className="h-full bg-indigo-600 rounded-full transition-all duration-300"
-          style={{ width: `${score}%` }}
+          className="h-full rounded-full transition-all duration-300"
+          style={{ width: `${score}%`, background: color }}
         />
       </div>
     </div>

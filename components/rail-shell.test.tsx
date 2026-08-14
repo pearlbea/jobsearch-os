@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import axe from "axe-core";
 import { RailShell } from "./rail-shell";
 
 let mockPathname = "/evaluator";
@@ -51,6 +52,18 @@ describe("RailShell", () => {
     );
 
     const evaluateLinks = screen.getAllByRole("link", { name: "Evaluate" });
-    expect(evaluateLinks[0].className).toMatch(/bg-zinc-900/);
+    expect(evaluateLinks[0].className).toMatch(/bg-primary/);
+  });
+
+  it("has no detectable accessibility violations", async () => {
+    const { container } = render(
+      <RailShell userEmail="pearl@example.com">
+        <div>content</div>
+      </RailShell>,
+    );
+
+    const results = await axe.run(container);
+
+    expect(results.violations).toEqual([]);
   });
 });

@@ -33,7 +33,9 @@ export function RailShell({ userEmail, children }: RailShellProps) {
             const isActive = pathname === item.href;
             const className = cn(
               "shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold",
-              isActive ? "bg-zinc-900 text-white" : "text-zinc-600",
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground",
             );
 
             return (
@@ -59,14 +61,14 @@ export function RailShell({ userEmail, children }: RailShellProps) {
               const className = cn(
                 "flex items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-[13.5px]",
                 isActive
-                  ? "bg-zinc-900 text-white font-semibold"
-                  : "text-zinc-600 font-medium",
+                  ? "bg-primary text-primary-foreground font-semibold"
+                  : "text-muted-foreground font-medium",
               );
               const dot = (
                 <span
                   className={cn(
                     "size-1.5 rounded-full",
-                    isActive ? "bg-white" : "bg-zinc-300",
+                    isActive ? "bg-primary-foreground" : "bg-border",
                   )}
                 />
               );
@@ -81,8 +83,8 @@ export function RailShell({ userEmail, children }: RailShellProps) {
           </nav>
         </div>
         <div className="flex flex-col gap-1 px-1">
-          <span className="text-[12.5px] text-zinc-600 truncate">{userEmail}</span>
-          <SignOutButton className="h-auto w-fit p-0 justify-start text-[12.5px] font-semibold text-zinc-900 hover:bg-transparent hover:underline" />
+          <span className="text-[12.5px] text-muted-foreground truncate">{userEmail}</span>
+          <SignOutButton className="h-auto w-fit p-0 justify-start text-[12.5px] font-semibold text-foreground hover:bg-transparent hover:underline" />
         </div>
       </div>
 

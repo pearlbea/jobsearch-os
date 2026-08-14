@@ -1,5 +1,4 @@
-import { Badge } from "@/components/ui/badge";
-import { getAtsBand } from "@/lib/score-band";
+import { bandStyles, getAtsBand } from "@/lib/score-band";
 import type { EvaluationSummary } from "@/types/database";
 
 interface AtsKeywordTableProps {
@@ -9,44 +8,36 @@ interface AtsKeywordTableProps {
 export function AtsKeywordTable({ atsAnalysis }: AtsKeywordTableProps) {
   const { missing_exact_keywords, ats_pass_probability } = atsAnalysis;
   const band = getAtsBand(ats_pass_probability);
-  const half = Math.ceil(missing_exact_keywords.length / 2);
-  const columns = [
-    missing_exact_keywords.slice(0, half),
-    missing_exact_keywords.slice(half),
-  ].filter((col) => col.length > 0);
+  const badge = bandStyles[band];
 
   return (
-    <div className="border border-zinc-200 rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
-        <span className="text-[13px] font-bold text-zinc-900">
-          ATS keyword check
+    <div className="bg-background border border-border rounded-xl px-5 py-4.5">
+      <div className="flex justify-between items-center mb-3.5">
+        <span className="text-[13px] font-bold text-foreground">
+          ATS Filter Simulation
         </span>
-        <Badge variant={band}>
-          {missing_exact_keywords.length} missing
-        </Badge>
+        <span
+          className="text-[11px] font-bold rounded-full px-2.5 py-1"
+          style={{
+            background: badge.badgeBg,
+            color: badge.badgeColor,
+            border: `1px solid ${badge.badgeColor}33`,
+          }}
+        >
+          {ats_pass_probability} ATS Pass Rate
+        </span>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 text-[13px]">
-        {columns.map((column, colIdx) => (
-          <div
-            key={colIdx}
-            className={
-              colIdx === 1 ? "flex flex-col border-l border-zinc-100" : "flex flex-col"
-            }
+      <div className="text-xs font-semibold text-muted-foreground mb-2.5">
+        Missing Verbatim Keywords
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {missing_exact_keywords.map((keyword, idx) => (
+          <span
+            key={`${keyword}-${idx}`}
+            className="text-[13px] text-[#B91C1C] bg-[#FEF2F2] border border-[#FBD5D5] rounded-full px-3 py-1"
           >
-            {column.map((keyword, rowIdx) => (
-              <div
-                key={`${keyword}-${rowIdx}`}
-                className={
-                  rowIdx === column.length - 1
-                    ? "flex justify-between px-4 py-2.5"
-                    : "flex justify-between px-4 py-2.5 border-b border-zinc-100"
-                }
-              >
-                <span>{keyword}</span>
-                <span className="font-semibold text-red-700">Missing</span>
-              </div>
-            ))}
-          </div>
+            {keyword}
+          </span>
         ))}
       </div>
     </div>

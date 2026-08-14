@@ -43,12 +43,6 @@ describe("EvaluationsList Component", () => {
     );
   });
 
-  it("shows an empty state when there are no evaluations", () => {
-    render(<EvaluationsList {...defaultProps} jobs={[]} />);
-
-    expect(screen.getByText(/no saved evaluations yet/i)).toBeInTheDocument();
-  });
-
   it("lists each evaluation with its role, company, and score", () => {
     render(<EvaluationsList {...defaultProps} />);
 

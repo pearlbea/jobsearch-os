@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import axe from "axe-core";
 import { EvaluatorView } from "./evaluator-view";
 import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supabase-mock";
 
@@ -20,9 +21,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/components/job-evaluator-form", () => ({
-  JobEvaluatorForm: ({ open }: { open: boolean }) => (
-    <div data-testid="job-evaluator-form" data-open={open} />
-  ),
+  JobEvaluatorForm: () => <div data-testid="job-evaluator-form" />,
 }));
 
 const mockJob = {
@@ -58,7 +57,12 @@ describe("EvaluatorView", () => {
     mockSupabase = createMockSupabaseClient();
   });
 
-  it("shows the empty state and never queries Supabase when no job param is present", async () => {
+  it("shows the empty state and hides the saved-evaluations sidebar when there are no saved evaluations", async () => {
+    mockSupabase.from.mockImplementation(() => ({
+      select: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({ data: [], error: null }),
+    }));
+
     render(<EvaluatorView />);
 
     await waitFor(() => {
@@ -66,12 +70,8 @@ describe("EvaluatorView", () => {
         screen.getByText(/submit a job posting above/i),
       ).toBeInTheDocument();
     });
-    // Nothing to show, so the form stays open.
-    expect(screen.getByTestId("job-evaluator-form")).toHaveAttribute(
-      "data-open",
-      "true",
-    );
-    expect(mockSupabase.from).not.toHaveBeenCalled();
+    expect(screen.queryByText(/saved evaluations/i)).not.toBeInTheDocument();
+    expect(mockSupabase.from).toHaveBeenCalledWith("jobs");
   });
 
   it("loads the job referenced by the job search param via the API", async () => {
@@ -113,27 +113,7 @@ describe("EvaluatorView", () => {
     });
   });
 
-  it("opens the history modal when the History button is clicked", async () => {
-    mockSupabase.from.mockImplementation(() => ({
-      select: vi.fn().mockReturnThis(),
-      order: vi.fn().mockResolvedValue({ data: [], error: null }),
-    }));
-
-    const user = userEvent.setup();
-    render(<EvaluatorView />);
-
-    expect(
-      screen.queryByRole("heading", { name: "History" }),
-    ).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "History" }));
-
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "History" })).toBeInTheDocument();
-    });
-  });
-
-  it("navigates to the selected evaluation and closes the modal", async () => {
+  it("shows saved evaluations in the sidebar and navigates when one is selected", async () => {
     mockSupabase.from.mockImplementation(() => ({
       select: vi.fn().mockReturnThis(),
       order: vi.fn().mockResolvedValue({
@@ -153,7 +133,6 @@ describe("EvaluatorView", () => {
     const user = userEvent.setup();
     render(<EvaluatorView />);
 
-    await user.click(screen.getByRole("button", { name: "History" }));
     await waitFor(() => {
       expect(screen.getByText("Engineering Manager")).toBeInTheDocument();
     });
@@ -161,10 +140,45 @@ describe("EvaluatorView", () => {
     await user.click(screen.getByText("Engineering Manager"));
 
     expect(mockPush).toHaveBeenCalledWith("/evaluator?job=job-1");
+  });
+
+  it("has no detectable accessibility violations", async () => {
+    searchParamValue = "job-1";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ job: mockJob }),
+        } as Response),
+      ),
+    );
+    mockSupabase.from.mockImplementation(() => ({
+      select: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({
+        data: [
+          {
+            id: "job-1",
+            role_title: "Engineering Manager",
+            company_name: "Acme Corp",
+            match_score: 82,
+            created_at: "2026-08-01T00:00:00Z",
+          },
+        ],
+        error: null,
+      }),
+    }));
+
+    const { container } = render(<EvaluatorView />);
+
     await waitFor(() => {
       expect(
-        screen.queryByRole("heading", { name: "History" }),
-      ).not.toBeInTheDocument();
+        screen.getByRole("heading", { name: "Engineering Manager" }),
+      ).toBeInTheDocument();
     });
+
+    const results = await axe.run(container);
+
+    expect(results.violations).toEqual([]);
   });
 });

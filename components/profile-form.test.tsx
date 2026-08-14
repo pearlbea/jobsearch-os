@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi, type Mock } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import axe from "axe-core";
 import { ProfileForm } from "./profile-form";
 import { createClient } from "@/lib/supabase/client";
 import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supabase-mock";
@@ -129,5 +130,13 @@ describe("ProfileForm Component", () => {
         screen.getByText("Database connection failed"),
       ).toBeInTheDocument();
     });
+  });
+
+  it("has no detectable accessibility violations", async () => {
+    const { container } = render(<ProfileForm {...defaultProps} />);
+
+    const results = await axe.run(container);
+
+    expect(results.violations).toEqual([]);
   });
 });

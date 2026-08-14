@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi, type Mock } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import axe from "axe-core";
 import { SignOutButton } from "./sign-out-button";
 import { createClient } from "@/lib/supabase/client";
 import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supabase-mock";
@@ -38,5 +39,13 @@ describe("SignOutButton", () => {
     expect(mockSupabase.auth.signOut).toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith("/login");
     expect(mockRefresh).toHaveBeenCalled();
+  });
+
+  it("has no detectable accessibility violations", async () => {
+    const { container } = render(<SignOutButton />);
+
+    const results = await axe.run(container);
+
+    expect(results.violations).toEqual([]);
   });
 });
