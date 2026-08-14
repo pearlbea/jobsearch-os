@@ -1,34 +1,19 @@
-import { Suspense } from "react";
 import { describe, it, expect, beforeEach, vi, type Mock } from "vitest";
-import { act, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import LoginPage from "./page";
 import { createClient } from "@/lib/supabase/client";
 
+let mockSearchParams = new URLSearchParams();
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  useSearchParams: () => mockSearchParams,
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: vi.fn(),
 }));
-
-async function renderLoginPage(
-  searchParams: Record<string, string | string[] | undefined> = {},
-) {
-  let utils!: ReturnType<typeof render>;
-  // The page reads `searchParams` via React's `use()`, which suspends on the
-  // first pass even though the promise is already resolved; flushing inside
-  // an async `act` lets the resolved value commit before we assert on it.
-  await act(async () => {
-    utils = render(
-      <Suspense fallback={null}>
-        <LoginPage searchParams={Promise.resolve(searchParams)} />
-      </Suspense>,
-    );
-  });
-  return utils;
-}
 
 describe("LoginPage", () => {
   let mockSignInWithPassword: Mock;
@@ -36,6 +21,8 @@ describe("LoginPage", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    mockSearchParams = new URLSearchParams();
 
     mockSignInWithPassword = vi.fn().mockResolvedValue({ error: null });
     mockSignUp = vi
@@ -50,8 +37,8 @@ describe("LoginPage", () => {
     });
   });
 
-  it("defaults to sign-in mode when no mode search param is present", async () => {
-    await renderLoginPage();
+  it("defaults to sign-in mode when no mode search param is present", () => {
+    render(<LoginPage />);
 
     expect(
       screen.getByRole("heading", { name: "Sign in" }),
@@ -61,8 +48,9 @@ describe("LoginPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows the sign-up form when the mode search param is sign-up", async () => {
-    await renderLoginPage({ mode: "sign-up" });
+  it("shows the sign-up form when the mode search param is sign-up", () => {
+    mockSearchParams = new URLSearchParams({ mode: "sign-up" });
+    render(<LoginPage />);
 
     expect(
       screen.getByRole("heading", { name: "Create an account" }),
@@ -75,8 +63,9 @@ describe("LoginPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("ignores unrecognized mode values and falls back to sign-in", async () => {
-    await renderLoginPage({ mode: "bogus" });
+  it("ignores unrecognized mode values and falls back to sign-in", () => {
+    mockSearchParams = new URLSearchParams({ mode: "bogus" });
+    render(<LoginPage />);
 
     expect(
       screen.getByRole("heading", { name: "Sign in" }),
@@ -84,8 +73,9 @@ describe("LoginPage", () => {
   });
 
   it("sends new sign-ups to the profile page once they confirm their email", async () => {
+    mockSearchParams = new URLSearchParams({ mode: "sign-up" });
     const user = userEvent.setup();
-    await renderLoginPage({ mode: "sign-up" });
+    render(<LoginPage />);
 
     await user.type(screen.getByLabelText("Email"), "new@example.com");
     await user.type(screen.getByLabelText("Password"), "a-long-password-123");
