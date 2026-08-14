@@ -1,3 +1,5 @@
+"use client";
+
 import { JobSummary } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
