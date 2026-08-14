@@ -7,7 +7,7 @@ export default function LoginLayout({
 }) {
   return (
     <>
-      <Header />
+      <Header showSignIn={false} />
       <main className="flex-1 px-4 py-10 max-w-2xl mx-auto w-full">
         {children}
       </main>

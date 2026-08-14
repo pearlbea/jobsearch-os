@@ -15,13 +15,31 @@ export default async function Home() {
   const supabase = await createClient();
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+  const loggedIn = user && !authError ? user : null;
 
-  const { data: profile } = user
-    ? await supabase.from("profiles").select("*").eq("id", user.id).single()
-    : { data: null };
+  const { data: profile, error: profileError } = loggedIn
+    ? await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", loggedIn.id)
+        .single()
+    : { data: null, error: null };
 
-  if (!user || !profile) {
+  // PGRST116 just means "no profile row yet" (expected pre-onboarding);
+  // any other error is unexpected and shouldn't be silently treated as that.
+  if (loggedIn && profileError && profileError.code !== "PGRST116") {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6 py-12 text-center">
+        <p className="text-muted-foreground">
+          Something went wrong loading your profile. Please refresh the page.
+        </p>
+      </div>
+    );
+  }
+
+  if (!loggedIn || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6 py-12">
         <div className="max-w-[1040px] w-full">
@@ -89,12 +107,14 @@ export default async function Home() {
               >
                 Create your profile
               </Button>
-              <Link
-                href="/login"
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                Already have a profile? Sign in
-              </Link>
+              {!loggedIn && (
+                <Link
+                  href="/login"
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Already have a profile? Sign in
+                </Link>
+              )}
             </div>
           </div>
 
@@ -120,10 +140,10 @@ export default async function Home() {
   }
 
   return (
-    <RailShell userEmail={user.email ?? ""}>
+    <RailShell userEmail={loggedIn.email ?? ""}>
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-[28px] font-extrabold tracking-tight text-foreground mb-6">
-          Welcome back, {profile.full_name || user.email}.
+          Welcome back, {profile.full_name || loggedIn.email}.
         </h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link

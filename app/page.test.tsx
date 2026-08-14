@@ -35,7 +35,7 @@ describe("Home page", () => {
     (createClient as Mock).mockResolvedValue(mockSupabase);
   });
 
-  it("shows a sign-in CTA and never queries profiles when logged out", async () => {
+  it("shows a sign-in link and never queries profiles when logged out", async () => {
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: null },
       error: null,
@@ -44,12 +44,9 @@ describe("Home page", () => {
     const page = await Home();
     render(page);
 
-    // Both the header and the hero have their own "Sign in" CTA.
-    const signInButtons = screen.getAllByRole("button", { name: "Sign in" });
-    expect(signInButtons.length).toBeGreaterThan(0);
-    for (const button of signInButtons) {
-      expect(button).toHaveAttribute("href", "/login");
-    }
+    expect(
+      screen.getByRole("link", { name: "Already have a profile? Sign in" }),
+    ).toHaveAttribute("href", "/login");
     expect(mockSupabase.from).not.toHaveBeenCalled();
   });
 
@@ -68,9 +65,46 @@ describe("Home page", () => {
     expect(
       screen.getByRole("button", { name: "Create your profile" }),
     ).toHaveAttribute("href", "/profile");
+    // Already signed in, so there's no reason to offer a sign-in link.
     expect(
-      screen.getByRole("link", { name: "Skip to the evaluator" }),
-    ).toHaveAttribute("href", "/evaluator");
+      screen.queryByRole("link", { name: /Sign in/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows an error state instead of onboarding when the profile fetch fails unexpectedly", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-123", email: "pearl@example.com" } },
+      error: null,
+    });
+    mockSupabase.single.mockResolvedValue({
+      data: null,
+      error: { code: "500", message: "connection reset" },
+    });
+
+    const page = await Home();
+    render(page);
+
+    expect(
+      screen.getByText(/Something went wrong loading your profile/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Create your profile" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("treats a failed auth check as logged out", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: null },
+      error: { message: "invalid session" },
+    });
+
+    const page = await Home();
+    render(page);
+
+    expect(
+      screen.getByRole("link", { name: "Already have a profile? Sign in" }),
+    ).toBeInTheDocument();
+    expect(mockSupabase.from).not.toHaveBeenCalled();
   });
 
   it("shows the profile/evaluator dashboard when logged in with a profile", async () => {
