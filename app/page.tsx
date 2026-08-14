@@ -2,7 +2,6 @@ import Link from "next/link";
 import { TriangleAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { Header } from "@/components/header";
 import { Logo } from "@/components/logo";
 import { RailShell } from "@/components/rail-shell";
 
@@ -18,35 +17,11 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return (
-      <>
-        <Header />
-        <main className="flex-1 px-4 py-10 max-w-2xl mx-auto w-full">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <h1 className="text-3xl font-semibold text-foreground">
-              Land your next role, faster.
-            </h1>
-            <p className="text-muted-foreground">
-              Sign in to build your profile and evaluate job postings against
-              it.
-            </p>
-            <Button render={<Link href="/login" />} nativeButton={false}>
-              Sign in
-            </Button>
-          </div>
-        </main>
-      </>
-    );
-  }
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("*").eq("id", user.id).single()
+    : { data: null };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile) {
+  if (!user || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6 py-12">
         <div className="max-w-[1040px] w-full">
@@ -115,10 +90,10 @@ export default async function Home() {
                 Create your profile
               </Button>
               <Link
-                href="/evaluator"
+                href="/login"
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
-                Skip to the evaluator
+                Already have a profile? Sign in
               </Link>
             </div>
           </div>

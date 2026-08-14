@@ -4,16 +4,12 @@ import axe from "axe-core";
 import { Header } from "./header";
 
 describe("Header", () => {
-  it("renders the wordmark linking home and a sign-in control", () => {
+  it("renders the wordmark linking home", () => {
     render(<Header />);
 
     expect(screen.getByRole("link", { name: "JobSearch OS" })).toHaveAttribute(
       "href",
       "/",
-    );
-    expect(screen.getByRole("button", { name: "Sign in" })).toHaveAttribute(
-      "href",
-      "/login",
     );
   });
 
