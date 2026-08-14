@@ -47,6 +47,9 @@ describe("Home page", () => {
     expect(
       screen.getByRole("link", { name: "Already have a profile? Sign in" }),
     ).toHaveAttribute("href", "/login");
+    expect(
+      screen.getByRole("button", { name: "Create your profile" }),
+    ).toHaveAttribute("href", "/login?mode=sign-up");
     expect(mockSupabase.from).not.toHaveBeenCalled();
   });
 
