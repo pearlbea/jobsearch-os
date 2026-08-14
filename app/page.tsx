@@ -28,7 +28,8 @@ export default async function Home() {
               Land your next role, faster.
             </h1>
             <p className="text-muted-foreground">
-              Sign in to build your profile and evaluate job postings against it.
+              Sign in to build your profile and evaluate job postings against
+              it.
             </p>
             <Button render={<Link href="/login" />} nativeButton={false}>
               Sign in
@@ -125,8 +126,8 @@ export default async function Home() {
           <div className="flex gap-2 items-start px-1">
             <TriangleAlert className="h-[15px] w-[15px] shrink-0 mt-0.5 text-[#BE854A]" />
             <p className="text-[13px] text-muted-foreground leading-relaxed">
-              This is a demo with a limited token budget. Each user is
-              limited to 5 evaluations. You are welcome to clone{" "}
+              This is a demo with a limited token budget. Each user is limited
+              to 5 evaluations. You are welcome to clone{" "}
               <Link
                 href="https://github.com/pearlbea/jobsearch-os"
                 target="_blank"
@@ -146,26 +147,24 @@ export default async function Home() {
   return (
     <RailShell userEmail={user.email ?? ""}>
       <div className="max-w-3xl mx-auto space-y-6">
-        <h1 className="text-2xl font-semibold text-foreground">
+        <h1 className="text-[28px] font-extrabold tracking-tight text-foreground mb-6">
           Welcome back, {profile.full_name || user.email}.
         </h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link
             href="/profile"
-            className="block rounded-xl border border-border bg-card p-6 shadow-sm hover:border-primary/40"
+            className="block rounded-2xl border border-border bg-card p-6 shadow-[0_6px_20px_rgba(60,45,20,0.05)] transition-colors hover:border-primary/40"
           >
-            <h2 className="text-lg font-semibold text-foreground">Profile</h2>
+            <h2 className="text-lg font-bold text-foreground">Profile</h2>
             <p className="text-sm text-muted-foreground mt-1">
               View or update your resume, target roles, and skills.
             </p>
           </Link>
           <Link
             href="/evaluator"
-            className="block rounded-xl border border-border bg-card p-6 shadow-sm hover:border-primary/40"
+            className="block rounded-2xl border border-border bg-card p-6 shadow-[0_6px_20px_rgba(60,45,20,0.05)] transition-colors hover:border-primary/40"
           >
-            <h2 className="text-lg font-semibold text-foreground">
-              Job Evaluator
-            </h2>
+            <h2 className="text-lg font-bold text-foreground">Job Evaluator</h2>
             <p className="text-sm text-muted-foreground mt-1">
               Evaluate job postings against your profile.
             </p>

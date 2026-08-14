@@ -24,23 +24,15 @@ const jobs: JobSummary[] = [
 
 describe("EvaluationsList Component", () => {
   const onSelectJob = vi.fn();
-  const onDeleteJob = vi.fn();
 
   const defaultProps = {
     jobs,
     selectedJobId: null,
     onSelectJob,
-    onDeleteJob,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal("confirm", vi.fn(() => true));
-    vi.stubGlobal("alert", vi.fn());
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => Promise.resolve({ ok: true } as Response)),
-    );
   });
 
   it("lists each evaluation with its role, company, and score", () => {
@@ -84,58 +76,6 @@ describe("EvaluationsList Component", () => {
     await user.keyboard(" ");
 
     expect(onSelectJob).toHaveBeenCalledWith("job-2");
-  });
-
-  it("asks for confirmation and deletes the job when confirmed", async () => {
-    const user = userEvent.setup();
-    render(<EvaluationsList {...defaultProps} />);
-
-    const deleteButtons = screen.getAllByRole("button", {
-      name: /delete evaluation/i,
-    });
-    await user.click(deleteButtons[0]);
-
-    expect(confirm).toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledWith("/api/jobs/job-1", {
-      method: "DELETE",
-    });
-
-    await vi.waitFor(() => {
-      expect(onDeleteJob).toHaveBeenCalledWith("job-1");
-    });
-
-    // Deleting is a distinct action from selecting the row.
-    expect(onSelectJob).not.toHaveBeenCalled();
-  });
-
-  it("does not delete the job when the confirmation is declined", async () => {
-    vi.stubGlobal("confirm", vi.fn(() => false));
-    const user = userEvent.setup();
-    render(<EvaluationsList {...defaultProps} />);
-
-    const deleteButtons = screen.getAllByRole("button", {
-      name: /delete evaluation/i,
-    });
-    await user.click(deleteButtons[0]);
-
-    expect(fetch).not.toHaveBeenCalled();
-    expect(onDeleteJob).not.toHaveBeenCalled();
-  });
-
-  it("alerts the user when deletion fails", async () => {
-    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: false } as Response)));
-    const user = userEvent.setup();
-    render(<EvaluationsList {...defaultProps} />);
-
-    const deleteButtons = screen.getAllByRole("button", {
-      name: /delete evaluation/i,
-    });
-    await user.click(deleteButtons[0]);
-
-    await vi.waitFor(() => {
-      expect(alert).toHaveBeenCalledWith("Could not delete job evaluation.");
-    });
-    expect(onDeleteJob).not.toHaveBeenCalled();
   });
 
   it("has no detectable accessibility violations", async () => {

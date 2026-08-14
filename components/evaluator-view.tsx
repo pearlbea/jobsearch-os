@@ -79,7 +79,9 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
 
     async function loadActiveJob() {
       try {
-        const res = await fetch(`/api/jobs/${encodeURIComponent(requestedJobId)}`);
+        const res = await fetch(
+          `/api/jobs/${encodeURIComponent(requestedJobId)}`,
+        );
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to load job");
         const job = data.job as Job;
@@ -124,14 +126,6 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
     router.push(`/evaluator?job=${encodeURIComponent(selectedJobId)}`);
   };
 
-  const handleDeleteJob = (deletedJobId: string) => {
-    setJobSummaries((prev) => prev.filter((j) => j.id !== deletedJobId));
-    if (activeJob?.id === deletedJobId) {
-      setActiveJob(null);
-      router.push("/evaluator");
-    }
-  };
-
   return (
     <div className="max-w-6xl mx-auto flex flex-col gap-6">
       <div>
@@ -139,8 +133,7 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
           Job Evaluator
         </h1>
         <p className="text-[15px] text-muted-foreground">
-          Evaluate job postings against your resume, competencies, and ATS
-          filters.
+          Evaluate job postings against your resume.
         </p>
       </div>
 
@@ -157,7 +150,6 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
             jobs={jobSummaries}
             selectedJobId={jobId}
             onSelectJob={handleSelectJob}
-            onDeleteJob={handleDeleteJob}
           />
         )}
 
@@ -171,7 +163,7 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
           <div className="p-12 bg-card border border-border rounded-2xl text-center text-sm text-muted-foreground">
             {notFound
               ? "That evaluation couldn't be found."
-              : "Submit a job posting above to see your first evaluation."}
+              : "Submit a job posting above to see your evaluation."}
           </div>
         )}
       </div>
