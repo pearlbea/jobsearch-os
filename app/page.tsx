@@ -150,7 +150,7 @@ export default async function Home() {
           >
             <h2 className="text-lg font-bold text-foreground">Profile</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              View or update your resume, target roles, and skills.
+              View or update your resume.
             </p>
           </Link>
           <Link

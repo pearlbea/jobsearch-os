@@ -71,7 +71,9 @@ describe("POST /api/jobs/[id]/evaluate", () => {
     mockSupabase.from.mockImplementation((table: string) => {
       if (table === "jobs") {
         return createMockQueryBuilder({
-          single: vi.fn().mockResolvedValue({ data: null, error: new Error("Not found") }),
+          single: vi
+            .fn()
+            .mockResolvedValue({ data: null, error: new Error("Not found") }),
         });
       }
       return {};
@@ -93,10 +95,7 @@ describe("POST /api/jobs/[id]/evaluate", () => {
     };
     const mockProfile = {
       full_name: "Pearl Latteier",
-      target_titles: ["Platform TPM"],
-      location_preference: "Remote",
       resume: "Software engineer...",
-      technical_skills: ["TypeScript"],
     };
 
     mockSupabase.auth.getUser.mockResolvedValue({
@@ -144,10 +143,7 @@ describe("POST /api/jobs/[id]/evaluate", () => {
     };
     const mockProfile = {
       full_name: "Pearl Latteier",
-      target_titles: ["Platform TPM", "Engineering Manager"],
-      location_preference: "Remote",
       resume: "Software engineer and leader with 16 years experience...",
-      technical_skills: ["TypeScript", "Next.js", "Go", "HIPAA"],
     };
     const mockStories = [
       {
@@ -195,7 +191,11 @@ describe("POST /api/jobs/[id]/evaluate", () => {
       resume_snapshot: mockProfile.resume,
     };
 
-    const mockUpdatedJob = { ...mockJob, match_score: 93, evaluation_summary: mockEvaluationSummary };
+    const mockUpdatedJob = {
+      ...mockJob,
+      match_score: 93,
+      evaluation_summary: mockEvaluationSummary,
+    };
 
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: mockUser },

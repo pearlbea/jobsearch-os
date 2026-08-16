@@ -21,7 +21,10 @@ import { POST } from "@/app/api/evaluate-job/route";
 import { generateText } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest } from "next/server";
-import { createMockQueryBuilder, createMockSupabaseClient } from "@/test/supabase-mock";
+import {
+  createMockQueryBuilder,
+  createMockSupabaseClient,
+} from "@/test/supabase-mock";
 
 describe("POST /api/evaluate-job", () => {
   let mockSupabase: ReturnType<typeof createMockSupabaseClient>;
@@ -117,10 +120,7 @@ describe("POST /api/evaluate-job", () => {
     const mockUser = { id: "user-123" };
     const mockProfile = {
       full_name: "Pearl Latteier",
-      target_titles: ["Platform TPM"],
-      location_preference: "Remote",
       resume: "Software engineer...",
-      technical_skills: ["TypeScript"],
     };
 
     mockSupabase.auth.getUser.mockResolvedValue({
@@ -163,10 +163,7 @@ describe("POST /api/evaluate-job", () => {
     const mockUser = { id: "user-123" };
     const mockProfile = {
       full_name: "Pearl Latteier",
-      target_titles: ["Platform TPM", "Engineering Manager"],
-      location_preference: "Remote",
       resume: "Software engineer and leader with 15 years experience...",
-      technical_skills: ["TypeScript", "Next.js", "Go", "HIPAA"],
     };
 
     const mockStories = [

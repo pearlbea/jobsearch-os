@@ -2,8 +2,7 @@
 
 # App overview
 
-JobFit Scorecard: a candidate builds a profile (resume text, target titles,
-location preference, technical skills), then pastes in job postings to get a
+JobFit Scorecard: a candidate pastes in a resume, then pastes in job postings to get a
 Claude-generated fit evaluation (match score + technical/domain/scope
 breakdown, ATS keyword scan, strengths/gaps, positioning advice). Evaluations
 are saved per-user and revisitable.
