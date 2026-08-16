@@ -29,9 +29,7 @@ export async function POST(req: NextRequest) {
     // 1. Fetch compact profile fields only
     const { data: profile } = await supabase
       .from("profiles")
-      .select(
-        "full_name, target_titles, location_preference, resume, technical_skills",
-      )
+      .select("full_name, resume")
       .eq("id", user.id)
       .single();
 
@@ -79,7 +77,7 @@ export async function POST(req: NextRequest) {
         user_id: user.id,
         company_name: evalResult.co,
         role_title: evalResult.title,
-        location: evalResult.remote ? "Remote" : profile.location_preference,
+        location: evalResult.remote ? "Remote" : null,
         job_url: job_url || null,
         raw_description,
         status: "bookmarked",

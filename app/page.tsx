@@ -20,11 +20,7 @@ export default async function Home() {
   const loggedIn = user && !authError ? user : null;
 
   const { data: profile, error: profileError } = loggedIn
-    ? await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", loggedIn.id)
-        .single()
+    ? await supabase.from("profiles").select("*").eq("id", loggedIn.id).single()
     : { data: null, error: null };
 
   // PGRST116 just means "no profile row yet" (expected pre-onboarding);
@@ -51,9 +47,9 @@ export default async function Home() {
                 Know where you stand before you apply
               </h1>
               <p className="text-base text-muted-foreground-strong leading-relaxed">
-                JobSearch OS matches your background against job postings you
-                paste in, scoring fit and flagging gaps so you know where you
-                stand before you apply.
+                JobFit Scorecard evaluates your resume against any job posting
+                to score your fit and flag gaps. Identify high-fit roles, tailor
+                your resume with confidence, and pass ATS filters.
               </p>
             </div>
 
@@ -95,12 +91,14 @@ export default async function Home() {
               First, let&apos;s set up your profile
             </h2>
             <p className="text-[15px] text-muted-foreground mb-[22px]">
-              Add your resume, target roles, and skills — takes about two
-              minutes.
+              Add your resume so the AI evaluator can score your fit against job
+              postings.
             </p>
             <div className="flex items-center gap-4">
               <Button
-                render={<Link href={loggedIn ? "/profile" : "/login?mode=sign-up"} />}
+                render={
+                  <Link href={loggedIn ? "/profile" : "/login?mode=sign-up"} />
+                }
                 nativeButton={false}
                 size="lg"
                 className="px-6"

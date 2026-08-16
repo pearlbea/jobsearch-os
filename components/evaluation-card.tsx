@@ -1,8 +1,22 @@
 import { Job, Evaluation } from "@/types/database";
 import { AtsKeywordTable } from "@/components/ats-keyword-table";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import Link from "next/link";
 import { bandStyles, getScoreBand } from "@/lib/score-band";
+
+const SCORE_DESCRIPTIONS = {
+  technical_match:
+    "How well your hands-on tools, languages, and frameworks match what this role requires.",
+  domain_match:
+    "How closely your industry and business-domain experience lines up with this role.",
+  leadership_match:
+    "How well the scope of your role — team size managed, decision-making authority, IC vs. management track — matches what this role calls for.",
+} as const;
 
 interface EvaluationCardProps {
   job: Job;
@@ -24,7 +38,6 @@ export function EvaluationCard({
       key_strengths,
       potential_gaps,
       positioning_advice,
-      parsed_requirements,
       ats_analysis,
     },
   } = evaluation;
@@ -54,19 +67,6 @@ export function EvaluationCard({
               </Link>
             </div>
           )}
-          <div className="text-[13px] text-muted-foreground flex items-center gap-2 flex-wrap">
-            <span>{job.location || "Location not specified"}</span>
-            {parsed_requirements?.is_remote && (
-              <span className="px-2 py-0.5 rounded bg-accent text-primary text-[11px] font-semibold">
-                Remote
-              </span>
-            )}
-            {parsed_requirements?.salary_range && (
-              <span className="px-2 py-0.5 rounded bg-secondary text-secondary-foreground text-[11px] font-medium">
-                {parsed_requirements.salary_range}
-              </span>
-            )}
-          </div>
         </div>
         <div
           className="text-center rounded-xl px-5.5 py-3 min-w-[100px] shrink-0"
@@ -97,14 +97,17 @@ export function EvaluationCard({
         <ScoreBar
           label="Technical Match"
           score={score_breakdown?.technical_match || 0}
+          description={SCORE_DESCRIPTIONS.technical_match}
         />
         <ScoreBar
           label="Domain Match"
           score={score_breakdown?.domain_match || 0}
+          description={SCORE_DESCRIPTIONS.domain_match}
         />
         <ScoreBar
           label="Leadership / Scope"
           score={score_breakdown?.leadership_match || 0}
+          description={SCORE_DESCRIPTIONS.leadership_match}
         />
       </div>
 
@@ -177,13 +180,31 @@ export function EvaluationCard({
   );
 }
 
-function ScoreBar({ label, score }: { label: string; score: number }) {
+function ScoreBar({
+  label,
+  score,
+  description,
+}: {
+  label: string;
+  score: number;
+  description: string;
+}) {
   const color = bandStyles[getScoreBand(score)].barColor;
 
   return (
     <div className="bg-background rounded-[10px] px-4 py-3.5">
       <div className="flex justify-between text-[13px] mb-2">
-        <span className="font-semibold text-muted-foreground-strong">{label}</span>
+        <Tooltip>
+          <TooltipTrigger
+            aria-label={`What ${label} measures`}
+            className="font-semibold text-muted-foreground-strong underline decoration-dotted underline-offset-2 hover:text-foreground"
+          >
+            {label}
+          </TooltipTrigger>
+          <TooltipContent className="max-w-56 text-center font-normal">
+            {description}
+          </TooltipContent>
+        </Tooltip>
         <span className="font-bold" style={{ color }}>
           {score}%
         </span>

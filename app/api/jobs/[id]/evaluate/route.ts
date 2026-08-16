@@ -38,9 +38,7 @@ export async function POST(
     // 2. Fetch compact profile fields only
     const { data: profile } = await supabase
       .from("profiles")
-      .select(
-        "full_name, target_titles, location_preference, resume, technical_skills",
-      )
+      .select("full_name, resume")
       .eq("id", user.id)
       .single();
 

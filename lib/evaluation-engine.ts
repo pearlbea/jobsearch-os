@@ -17,14 +17,7 @@ export function cleanJobDescription(text: string): string {
     .trim();
 }
 
-type EvaluationProfile = Pick<
-  Profile,
-  | "full_name"
-  | "target_titles"
-  | "location_preference"
-  | "resume"
-  | "technical_skills"
->;
+type EvaluationProfile = Pick<Profile, "full_name" | "resume">;
 
 interface EvaluationStory {
   title: string;
@@ -51,11 +44,10 @@ export async function runEvaluation({
   EVALUATION RULES:
   1. SEMANTIC MATCH (Overall Score): Evaluate if the candidate's actual experience and capabilities match the role.
   2. ATS KEYWORD SCAN (ats_analysis): Act like a strict, literal keyword filter (Workday/Taleo). Identify high-frequency technical tools, certifications, or domain terms explicitly present in the JOB POSTING that are missing verbatim from the RESUME.
+  3. SCORE BREAKDOWN: Score breakdown.tech, breakdown.domain, and breakdown.scope independently of each other, as defined in their schema descriptions. breakdown.scope in particular is a leadership/seniority assessment (team size, decision-making authority, IC vs. management track) — evaluate it as the Executive Engineering Leader persona, not as a proxy for technical skill.
 
   CANDIDATE:
-  - Target: ${profile.target_titles?.join(", ")} | Location: ${profile.location_preference}
-  - Skills: ${profile.technical_skills?.join(", ")}
-  - Summary: ${redactedResume?.slice(0, 300)}
+  - Resume: ${redactedResume}
   - Key Projects: ${stories?.map((s) => `${s.title} (${s.competencies?.join(",")})`).join("; ")}
 
   RUBRIC:
