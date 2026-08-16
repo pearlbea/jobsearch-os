@@ -7,9 +7,27 @@ export const compactEvaluationSchema = z.object({
   remote: z.boolean().describe("Is fully remote"),
   score: z.number().min(0).max(100).describe("0-100 match score"),
   breakdown: z.object({
-    tech: z.number().min(0).max(100),
-    domain: z.number().min(0).max(100),
-    scope: z.number().min(0).max(100),
+    tech: z
+      .number()
+      .min(0)
+      .max(100)
+      .describe(
+        "Technical match: overlap between the candidate's hands-on tools, languages, and frameworks and those the role requires.",
+      ),
+    domain: z
+      .number()
+      .min(0)
+      .max(100)
+      .describe(
+        "Domain match: how closely the candidate's industry/business-domain experience (e.g. healthtech, fintech, developer tools) aligns with this role's domain.",
+      ),
+    scope: z
+      .number()
+      .min(0)
+      .max(100)
+      .describe(
+        "Leadership/scope match: how well the candidate's level of responsibility (team size managed, decision-making authority, IC vs. management track, org scope of impact) matches what this role requires. Evaluate independently of technical or domain fit.",
+      ),
   }),
   ats_analysis: z.object({
     missing_exact_keywords: z
