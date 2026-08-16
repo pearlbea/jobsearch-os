@@ -116,6 +116,41 @@ describe("POST /api/evaluate-job", () => {
     });
   });
 
+  it("should return 400 if the profile has no resume", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-123" } },
+      error: null,
+    });
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === "profiles") {
+        return createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({
+            data: { full_name: "Pearl Latteier", resume: null },
+            error: null,
+          }),
+        });
+      }
+      return {};
+    });
+
+    const req = new NextRequest("http://localhost:3000/api/evaluate-job", {
+      method: "POST",
+      body: JSON.stringify({
+        raw_description: "Engineering Manager role at Lyric...",
+      }),
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json).toEqual({
+      error: "Add a resume to your profile before evaluating a job.",
+    });
+    expect(generateText).not.toHaveBeenCalled();
+  });
+
   it("should return 403 if the user has reached the evaluation limit", async () => {
     const mockUser = { id: "user-123" };
     const mockProfile = {

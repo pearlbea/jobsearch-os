@@ -86,6 +86,46 @@ describe("POST /api/jobs/[id]/evaluate", () => {
     expect(json).toEqual({ error: "Job not found" });
   });
 
+  it("should return 400 if the profile has no resume", async () => {
+    const mockUser = { id: "user-123" };
+    const mockJob = {
+      id: "job-1",
+      user_id: mockUser.id,
+      raw_description: "Engineering Manager role at Lyric...",
+    };
+
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: mockUser },
+      error: null,
+    });
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === "jobs") {
+        return createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({ data: mockJob, error: null }),
+        });
+      }
+      if (table === "profiles") {
+        return createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({
+            data: { full_name: "Pearl Latteier", resume: null },
+            error: null,
+          }),
+        });
+      }
+      return {};
+    });
+
+    const res = await POST(makeRequest(), makeProps());
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json).toEqual({
+      error: "Add a resume to your profile before evaluating a job.",
+    });
+    expect(generateText).not.toHaveBeenCalled();
+  });
+
   it("should return 403 if the user has reached the evaluation limit", async () => {
     const mockUser = { id: "user-123" };
     const mockJob = {

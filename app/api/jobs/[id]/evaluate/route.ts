@@ -47,6 +47,13 @@ export async function POST(
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
+    if (!profile.resume?.trim()) {
+      return NextResponse.json(
+        { error: "Add a resume to your profile before evaluating a job." },
+        { status: 400 },
+      );
+    }
+
     // 3. Enforce the per-user evaluation cap before spending any tokens
     const { count: evaluationCount, error: countError } = await supabase
       .from("evaluations")
