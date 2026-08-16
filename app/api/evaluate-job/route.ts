@@ -108,17 +108,27 @@ export async function POST(req: NextRequest) {
     // 8. Re-check the cap now that the row is actually committed. The check in
     // step 2 is only a fast-path to avoid spending tokens in the common case —
     // it can't prevent two concurrent requests from both passing it before
-    // either has inserted. This recheck is the real enforcement: whichever
-    // request's insert is the one that pushes the count over the limit rolls
-    // its own rows back, so the cap holds even when requests race.
-    const { count: finalCount, error: finalCountError } = await supabase
+    // either has inserted. This recheck is the real enforcement, and it has to
+    // be a per-row decision, not a shared count comparison: if two requests
+    // both read the same over-cap total, comparing that total against the cap
+    // would make BOTH of them roll back, underfilling the cap. Instead, rank
+    // this row against the user's other evaluations by insertion order — only
+    // the rows that actually fall beyond the cap roll themselves back, so the
+    // final count settles at exactly the cap regardless of how requests race.
+    const { data: userEvaluations, error: rankError } = await supabase
       .from("evaluations")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id);
+      .select("id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true });
 
-    if (finalCountError) throw finalCountError;
+    if (rankError) throw rankError;
 
-    if ((finalCount ?? 0) > MAX_EVALUATIONS_PER_USER) {
+    const rank =
+      (userEvaluations ?? []).findIndex((e) => e.id === savedEvaluation.id) +
+      1;
+
+    if (rank > MAX_EVALUATIONS_PER_USER) {
       const { error: rollbackEvalError } = await supabase
         .from("evaluations")
         .delete()
