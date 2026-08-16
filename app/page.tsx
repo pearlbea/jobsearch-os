@@ -50,7 +50,7 @@ export default async function Home() {
               <h1 className="text-[26px] md:text-[34px] font-extrabold leading-[1.3] tracking-tight mb-4 text-foreground">
                 Know where you stand before you apply
               </h1>
-              <p className="text-base text-[#5C564C] leading-relaxed">
+              <p className="text-base text-muted-foreground-strong leading-relaxed">
                 JobSearch OS matches your background against job postings you
                 paste in, scoring fit and flagging gaps so you know where you
                 stand before you apply.

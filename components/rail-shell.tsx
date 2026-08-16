@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { SignOutButton } from "@/components/sign-out-button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface RailShellProps {
   userEmail: string;
@@ -26,7 +27,10 @@ export function RailShell({ userEmail, children }: RailShellProps) {
           <Link href="/" className="font-extrabold text-sm tracking-tight">
             JobFit Scorecard
           </Link>
-          <SignOutButton className="h-auto p-0 text-xs font-semibold text-foreground hover:bg-transparent hover:underline" />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <SignOutButton className="h-auto p-0 text-xs font-semibold text-foreground hover:bg-transparent hover:underline" />
+          </div>
         </div>
         <div className="flex gap-1.5 overflow-x-auto">
           {NAV_ITEMS.map((item) => {
@@ -82,8 +86,11 @@ export function RailShell({ userEmail, children }: RailShellProps) {
             })}
           </nav>
         </div>
-        <div className="flex flex-col gap-1 px-1">
-          <span className="text-[12.5px] text-muted-foreground truncate">{userEmail}</span>
+        <div className="flex flex-col gap-2 px-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[12.5px] text-muted-foreground truncate">{userEmail}</span>
+            <ThemeToggle className="-mr-1" />
+          </div>
           <SignOutButton className="h-auto w-fit p-0 justify-start text-[12.5px] font-semibold text-foreground hover:bg-transparent hover:underline" />
         </div>
       </div>
