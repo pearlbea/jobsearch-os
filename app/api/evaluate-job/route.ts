@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { NoOutputGeneratedError } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import {
   MAX_EVALUATIONS_PER_USER,
@@ -104,6 +105,43 @@ export async function POST(req: NextRequest) {
 
     if (evalInsertError) throw evalInsertError;
 
+    // 8. Re-check the cap now that the row is actually committed. The check in
+    // step 2 is only a fast-path to avoid spending tokens in the common case —
+    // it can't prevent two concurrent requests from both passing it before
+    // either has inserted. This recheck is the real enforcement: whichever
+    // request's insert is the one that pushes the count over the limit rolls
+    // its own rows back, so the cap holds even when requests race.
+    const { count: finalCount, error: finalCountError } = await supabase
+      .from("evaluations")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    if (finalCountError) throw finalCountError;
+
+    if ((finalCount ?? 0) > MAX_EVALUATIONS_PER_USER) {
+      const { error: rollbackEvalError } = await supabase
+        .from("evaluations")
+        .delete()
+        .eq("id", savedEvaluation.id);
+      if (rollbackEvalError) {
+        console.error("Failed to roll back evaluation over cap:", rollbackEvalError);
+      }
+      const { error: rollbackJobError } = await supabase
+        .from("jobs")
+        .delete()
+        .eq("id", savedJob.id);
+      if (rollbackJobError) {
+        console.error("Failed to roll back job over cap:", rollbackJobError);
+      }
+
+      return NextResponse.json(
+        {
+          error: `You've reached the limit of ${MAX_EVALUATIONS_PER_USER} evaluations for this demo.`,
+        },
+        { status: 403 },
+      );
+    }
+
     return NextResponse.json({
       success: true,
       job: savedJob,
@@ -111,6 +149,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Optimized Evaluation Error:", error);
+    if (NoOutputGeneratedError.isInstance(error)) {
+      return NextResponse.json(
+        { error: "The AI evaluator returned an unexpected response. Please try again." },
+        { status: 502 },
+      );
+    }
     return NextResponse.json({ error: "Evaluation failed" }, { status: 500 });
   }
 }

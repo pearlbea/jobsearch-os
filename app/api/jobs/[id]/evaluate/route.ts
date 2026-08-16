@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { NoOutputGeneratedError } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import {
   MAX_EVALUATIONS_PER_USER,
@@ -93,12 +94,57 @@ export async function POST(
 
     if (evalInsertError) throw evalInsertError;
 
-    // 7. Refresh the job's latest-evaluation snapshot
+    // 7. Re-check the cap now that the row is actually committed. Step 3 is
+    // only a fast-path to avoid spending tokens in the common case — it can't
+    // prevent two concurrent requests from both passing it before either has
+    // inserted. This recheck is the real enforcement: whichever request's
+    // insert pushes the count over the limit rolls its own row back instead
+    // of touching the job snapshot, so the cap holds even when requests race.
+    const { count: finalCount, error: finalCountError } = await supabase
+      .from("evaluations")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    if (finalCountError) throw finalCountError;
+
+    if ((finalCount ?? 0) > MAX_EVALUATIONS_PER_USER) {
+      const { error: rollbackEvalError } = await supabase
+        .from("evaluations")
+        .delete()
+        .eq("id", savedEvaluation.id);
+      if (rollbackEvalError) {
+        console.error("Failed to roll back evaluation over cap:", rollbackEvalError);
+      }
+
+      return NextResponse.json(
+        {
+          error: `You've reached the limit of ${MAX_EVALUATIONS_PER_USER} evaluations for this demo.`,
+        },
+        { status: 403 },
+      );
+    }
+
+    // 8. Refresh the job's denormalized snapshot from the evaluations table's
+    // own latest row (by created_at) rather than this request's own result.
+    // Two re-evaluations of the same job can race, and their `jobs` updates
+    // can land in either order — reading "latest" back out here means
+    // whichever update runs last still writes a snapshot consistent with the
+    // newest evaluation row, instead of last-write-wins on stale data.
+    const { data: latestEvaluation, error: latestEvalError } = await supabase
+      .from("evaluations")
+      .select("match_score, evaluation_summary")
+      .eq("job_id", job.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (latestEvalError) throw latestEvalError;
+
     const { data: updatedJob, error: updateError } = await supabase
       .from("jobs")
       .update({
-        match_score: evalResult.score,
-        evaluation_summary: fullEvaluationSummary,
+        match_score: latestEvaluation.match_score,
+        evaluation_summary: latestEvaluation.evaluation_summary,
         updated_at: new Date().toISOString(),
       })
       .eq("id", job.id)
@@ -115,6 +161,12 @@ export async function POST(
     });
   } catch (error) {
     console.error("Re-evaluation Error:", error);
+    if (NoOutputGeneratedError.isInstance(error)) {
+      return NextResponse.json(
+        { error: "The AI evaluator returned an unexpected response. Please try again." },
+        { status: 502 },
+      );
+    }
     return NextResponse.json({ error: "Evaluation failed" }, { status: 500 });
   }
 }
