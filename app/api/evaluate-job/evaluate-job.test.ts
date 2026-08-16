@@ -11,6 +11,16 @@ vi.mock("ai", () => ({
   Output: {
     object: vi.fn((config) => config),
   },
+  // Stub matching the real ai SDK's shape closely enough for route.ts's
+  // `NoOutputGeneratedError.isInstance(error)` check in its catch block —
+  // without this, any exception that reaches the catch block (including
+  // ones unrelated to this class) fails with a confusing "no export"
+  // error from the mock instead of exercising the real code path.
+  NoOutputGeneratedError: class NoOutputGeneratedError {
+    static isInstance(): boolean {
+      return false;
+    }
+  },
 }));
 
 vi.mock("@ai-sdk/anthropic", () => ({
@@ -21,7 +31,10 @@ import { POST } from "@/app/api/evaluate-job/route";
 import { generateText } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest } from "next/server";
-import { createMockQueryBuilder, createMockSupabaseClient } from "@/test/supabase-mock";
+import {
+  createMockQueryBuilder,
+  createMockSupabaseClient,
+} from "@/test/supabase-mock";
 
 describe("POST /api/evaluate-job", () => {
   let mockSupabase: ReturnType<typeof createMockSupabaseClient>;
@@ -79,6 +92,74 @@ describe("POST /api/evaluate-job", () => {
     expect(json).toEqual({ error: "raw_description is required" });
   });
 
+  it("should return 400 if raw_description is whitespace only", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-123" } },
+      error: null,
+    });
+
+    const req = new NextRequest("http://localhost:3000/api/evaluate-job", {
+      method: "POST",
+      body: JSON.stringify({ raw_description: "   \n\t  " }),
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json).toEqual({ error: "raw_description is required" });
+  });
+
+  it("should return 400 if raw_description is entirely boilerplate", async () => {
+    const mockUser = { id: "user-123" };
+    const mockProfile = {
+      full_name: "Pearl Latteier",
+      resume: "Software engineer...",
+    };
+
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: mockUser },
+      error: null,
+    });
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === "profiles") {
+        return createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
+        });
+      }
+      if (table === "evaluations") {
+        return createMockQueryBuilder({
+          eq: vi.fn().mockResolvedValue({ count: 0, error: null }),
+        });
+      }
+      if (table === "stories") {
+        return createMockQueryBuilder({
+          eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+        });
+      }
+      return {};
+    });
+
+    const req = new NextRequest("http://localhost:3000/api/evaluate-job", {
+      method: "POST",
+      body: JSON.stringify({
+        raw_description:
+          "Equal Opportunity Employer. We do not discriminate based on race, gender, or other protected characteristics.",
+      }),
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json).toEqual({
+      error:
+        "The job posting text is empty after removing boilerplate. Please check the pasted content.",
+    });
+    expect(generateText).not.toHaveBeenCalled();
+  });
+
   it("should return 404 if user candidate profile is not found", async () => {
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: { id: "user-123" } },
@@ -113,14 +194,46 @@ describe("POST /api/evaluate-job", () => {
     });
   });
 
+  it("should return 400 if the profile has no resume", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-123" } },
+      error: null,
+    });
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === "profiles") {
+        return createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({
+            data: { full_name: "Pearl Latteier", resume: null },
+            error: null,
+          }),
+        });
+      }
+      return {};
+    });
+
+    const req = new NextRequest("http://localhost:3000/api/evaluate-job", {
+      method: "POST",
+      body: JSON.stringify({
+        raw_description: "Engineering Manager role at Lyric...",
+      }),
+    });
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json).toEqual({
+      error: "Add a resume to your profile before evaluating a job.",
+    });
+    expect(generateText).not.toHaveBeenCalled();
+  });
+
   it("should return 403 if the user has reached the evaluation limit", async () => {
     const mockUser = { id: "user-123" };
     const mockProfile = {
       full_name: "Pearl Latteier",
-      target_titles: ["Platform TPM"],
-      location_preference: "Remote",
       resume: "Software engineer...",
-      technical_skills: ["TypeScript"],
     };
 
     mockSupabase.auth.getUser.mockResolvedValue({
@@ -163,10 +276,7 @@ describe("POST /api/evaluate-job", () => {
     const mockUser = { id: "user-123" };
     const mockProfile = {
       full_name: "Pearl Latteier",
-      target_titles: ["Platform TPM", "Engineering Manager"],
-      location_preference: "Remote",
       resume: "Software engineer and leader with 15 years experience...",
-      technical_skills: ["TypeScript", "Next.js", "Go", "HIPAA"],
     };
 
     const mockStories = [

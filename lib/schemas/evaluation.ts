@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SCORE_DIMENSIONS } from "@/lib/score-dimensions";
 
 // Short keys reduce completion token overhead by ~40%
 export const compactEvaluationSchema = z.object({
@@ -7,9 +8,17 @@ export const compactEvaluationSchema = z.object({
   remote: z.boolean().describe("Is fully remote"),
   score: z.number().min(0).max(100).describe("0-100 match score"),
   breakdown: z.object({
-    tech: z.number().min(0).max(100),
-    domain: z.number().min(0).max(100),
-    scope: z.number().min(0).max(100),
+    tech: z.number().min(0).max(100).describe(SCORE_DIMENSIONS.tech.description),
+    domain: z
+      .number()
+      .min(0)
+      .max(100)
+      .describe(SCORE_DIMENSIONS.domain.description),
+    scope: z
+      .number()
+      .min(0)
+      .max(100)
+      .describe(SCORE_DIMENSIONS.scope.description),
   }),
   ats_analysis: z.object({
     missing_exact_keywords: z

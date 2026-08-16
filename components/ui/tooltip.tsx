@@ -1,38 +1,56 @@
-import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
+"use client";
 
-import { cn } from "@/lib/utils"
+import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
+
+import { cn } from "@/lib/utils";
 
 function TooltipProvider({
   delay = 300,
   ...props
 }: TooltipPrimitive.Provider.Props) {
-  return <TooltipPrimitive.Provider data-slot="tooltip-provider" delay={delay} {...props} />
+  return (
+    <TooltipPrimitive.Provider
+      data-slot="tooltip-provider"
+      delay={delay}
+      {...props}
+    />
+  );
 }
 
-function Tooltip({ children, ...props }: TooltipPrimitive.Root.Props) {
-  return (
-    <TooltipProvider>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props}>
-        {children}
-      </TooltipPrimitive.Root>
-    </TooltipProvider>
-  )
+// Doesn't wrap itself in a TooltipProvider — a single provider is mounted
+// once in app/layout.tsx so every tooltip in the tree shares one delay
+// group (adjacent tooltips reopen instantly instead of each waiting out
+// its own delay). Render <Tooltip> without an ancestor <TooltipProvider>
+// and this still works, just without that grouping.
+function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
+  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
 }
 
 function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
+  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
 }
 
 function TooltipContent({
   className,
-  sideOffset = 8,
   side = "top",
+  sideOffset = 0,
+  align = "start",
+  alignOffset = 0,
   children,
   ...props
-}: TooltipPrimitive.Popup.Props & TooltipPrimitive.Positioner.Props) {
+}: TooltipPrimitive.Popup.Props &
+  Pick<
+    TooltipPrimitive.Positioner.Props,
+    "side" | "sideOffset" | "align" | "alignOffset"
+  >) {
   return (
     <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Positioner side={side} sideOffset={sideOffset}>
+      <TooltipPrimitive.Positioner
+        side={side}
+        sideOffset={sideOffset}
+        align={align}
+        alignOffset={alignOffset}
+      >
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"
           role="tooltip"
@@ -46,7 +64,7 @@ function TooltipContent({
         </TooltipPrimitive.Popup>
       </TooltipPrimitive.Positioner>
     </TooltipPrimitive.Portal>
-  )
+  );
 }
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };

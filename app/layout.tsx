@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeScript } from "@/lib/theme-script";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -41,7 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeScript />
       </head>
       <body className="min-h-full max-w-7xl mx-auto flex flex-col bg-background text-foreground">
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>
   );

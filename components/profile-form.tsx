@@ -29,7 +29,7 @@ export function ProfileForm({
     text: string;
   } | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage(null);

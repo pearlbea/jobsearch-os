@@ -10,10 +10,7 @@ export interface Profile {
   id: string;
   full_name: string | null;
   email: string | null;
-  target_titles: string[] | null;
-  location_preference: string | null;
   resume: string | null;
-  technical_skills: string[] | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -79,12 +76,6 @@ export interface EvaluationSummary {
     missing_exact_keywords: string[];
     formatting_warnings: string[];
     ats_pass_probability: "High" | "Medium" | "Low";
-  };
-  parsed_requirements: {
-    required_skills: string[];
-    preferred_skills: string[];
-    is_remote: boolean;
-    salary_range?: string;
   };
 }
 

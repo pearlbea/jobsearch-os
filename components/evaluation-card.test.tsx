@@ -14,12 +14,6 @@ const baseEvaluationSummary: EvaluationSummary = {
   key_strengths: ["Led a platform migration", "Deep TypeScript experience"],
   potential_gaps: ["Limited experience with regulated industries"],
   positioning_advice: "Emphasize your platform leadership track record.",
-  parsed_requirements: {
-    required_skills: ["TypeScript", "React"],
-    preferred_skills: ["Next.js"],
-    is_remote: true,
-    salary_range: "$150k - $180k",
-  },
 };
 
 const baseEvaluation: Evaluation = {
@@ -53,78 +47,14 @@ describe("EvaluationCard Component", () => {
 
     expect(screen.getByText("Engineering Manager")).toBeInTheDocument();
     expect(screen.getByText("Acme Corp")).toBeInTheDocument();
-    expect(screen.getByText(/Remote \(US\)/)).toBeInTheDocument();
     expect(screen.getByText("82%")).toBeInTheDocument();
-  });
-
-  it("falls back to a placeholder when location is missing", () => {
-    render(
-      <EvaluationCard
-        job={{ ...baseJob, location: null }}
-        evaluation={baseEvaluation}
-      />,
-    );
-
-    expect(screen.getByText(/location not specified/i)).toBeInTheDocument();
-  });
-
-  it("shows a Remote badge only when the role is remote", () => {
-    const { rerender } = render(
-      <EvaluationCard job={baseJob} evaluation={baseEvaluation} />,
-    );
-    expect(screen.getByText("Remote")).toBeInTheDocument();
-
-    rerender(
-      <EvaluationCard
-        job={baseJob}
-        evaluation={{
-          ...baseEvaluation,
-          evaluation_summary: {
-            ...baseEvaluationSummary,
-            parsed_requirements: {
-              ...baseEvaluationSummary.parsed_requirements,
-              is_remote: false,
-            },
-          },
-        }}
-      />,
-    );
-    expect(screen.queryByText("Remote")).not.toBeInTheDocument();
-  });
-
-  it("shows a salary badge only when a salary range is provided", () => {
-    const { rerender } = render(
-      <EvaluationCard job={baseJob} evaluation={baseEvaluation} />,
-    );
-    expect(screen.getByText(/\$150k - \$180k/)).toBeInTheDocument();
-
-    rerender(
-      <EvaluationCard
-        job={baseJob}
-        evaluation={{
-          ...baseEvaluation,
-          evaluation_summary: {
-            ...baseEvaluationSummary,
-            parsed_requirements: {
-              ...baseEvaluationSummary.parsed_requirements,
-              salary_range: undefined,
-            },
-          },
-        }}
-      />,
-    );
-    expect(screen.queryByText(/\$150k - \$180k/)).not.toBeInTheDocument();
   });
 
   it("lists key strengths and potential gaps", () => {
     render(<EvaluationCard job={baseJob} evaluation={baseEvaluation} />);
 
-    expect(
-      screen.getByText("Led a platform migration"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Deep TypeScript experience"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Led a platform migration")).toBeInTheDocument();
+    expect(screen.getByText("Deep TypeScript experience")).toBeInTheDocument();
     expect(
       screen.getByText("Limited experience with regulated industries"),
     ).toBeInTheDocument();
@@ -142,7 +72,9 @@ describe("EvaluationCard Component", () => {
     const { rerender } = render(
       <EvaluationCard job={baseJob} evaluation={baseEvaluation} />,
     );
-    expect(screen.queryByText(/ATS Filter Simulation/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/ATS Filter Simulation/i),
+    ).not.toBeInTheDocument();
 
     rerender(
       <EvaluationCard
