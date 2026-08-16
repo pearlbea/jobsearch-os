@@ -29,10 +29,7 @@ describe("ProfileForm Component", () => {
       id: "user-123",
       full_name: "Pearl Latteier",
       email: "test@example.com",
-      target_titles: ["Engineering Manager", "Platform TPM"],
-      location_preference: "Remote or Tulsa, OK",
       resume: "Experienced software leader with background in internal tools.",
-      technical_skills: ["TypeScript", "Next.js", "Go"],
       created_at: "2026-08-01T00:00:00Z",
       updated_at: "2026-08-01T00:00:00Z",
     },
@@ -50,40 +47,10 @@ describe("ProfileForm Component", () => {
     render(<ProfileForm {...defaultProps} />);
 
     expect(screen.getByDisplayValue("Pearl Latteier")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Remote or Tulsa, OK")).toBeInTheDocument();
     expect(
       screen.getByDisplayValue(/Experienced software leader/i),
     ).toBeInTheDocument();
 
-    // Check rendered tags
-    expect(screen.getByText("Engineering Manager")).toBeInTheDocument();
-    expect(screen.getByText("Platform TPM")).toBeInTheDocument();
-    expect(screen.getByText("TypeScript")).toBeInTheDocument();
-  });
-
-  it("adds a new target title tag when typed and submitted", async () => {
-    const user = userEvent.setup();
-    render(<ProfileForm {...defaultProps} />);
-
-    const titleInput = screen.getByPlaceholderText(/Add title/i);
-    await user.type(titleInput, "Staff Software Engineer{enter}");
-
-    expect(screen.getByText("Staff Software Engineer")).toBeInTheDocument();
-    expect(titleInput).toHaveValue("");
-  });
-
-  it("removes a tag when the close button is clicked", async () => {
-    const user = userEvent.setup();
-    render(<ProfileForm {...defaultProps} />);
-
-    const tagToRemove = screen.getByText("Platform TPM");
-    expect(tagToRemove).toBeInTheDocument();
-
-    // Find the '×' button associated with "Platform TPM"
-    const removeButtons = screen.getAllByRole("button", { name: "×" });
-    await user.click(removeButtons[1]); // second tag
-
-    expect(screen.queryByText("Platform TPM")).not.toBeInTheDocument();
   });
 
   it("submits the form successfully and updates Supabase", async () => {

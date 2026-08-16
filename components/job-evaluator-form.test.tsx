@@ -16,11 +16,6 @@ const mockEvaluation: Evaluation = {
     key_strengths: ["Strong technical background"],
     potential_gaps: [],
     positioning_advice: "Lead with your platform experience.",
-    parsed_requirements: {
-      required_skills: [],
-      preferred_skills: [],
-      is_remote: true,
-    },
   },
   resume_snapshot: "Software engineer...",
   created_at: "2026-08-01T00:00:00Z",
