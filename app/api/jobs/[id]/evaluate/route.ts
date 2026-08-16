@@ -80,6 +80,16 @@ export async function POST(
     // 5. Re-run against the job's stored posting text and the current profile
     const cleanedDescription = cleanJobDescription(job.raw_description);
 
+    if (!cleanedDescription.trim()) {
+      return NextResponse.json(
+        {
+          error:
+            "This job's posting text is empty after removing boilerplate and can't be re-evaluated.",
+        },
+        { status: 400 },
+      );
+    }
+
     const { evalResult, fullEvaluationSummary } = await runEvaluation({
       profile,
       stories,

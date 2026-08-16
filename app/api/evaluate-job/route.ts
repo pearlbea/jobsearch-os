@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { raw_description, job_url } = await req.json();
-    if (!raw_description) {
+    if (typeof raw_description !== "string" || !raw_description.trim()) {
       return NextResponse.json(
         { error: "raw_description is required" },
         { status: 400 },
@@ -70,6 +70,16 @@ export async function POST(req: NextRequest) {
 
     // 4. Pre-process job description to drop non-essential footer text
     const cleanedDescription = cleanJobDescription(raw_description);
+
+    if (!cleanedDescription.trim()) {
+      return NextResponse.json(
+        {
+          error:
+            "The job posting text is empty after removing boilerplate. Please check the pasted content.",
+        },
+        { status: 400 },
+      );
+    }
 
     // 5. Run the evaluation
     const { evalResult, fullEvaluationSummary } = await runEvaluation({

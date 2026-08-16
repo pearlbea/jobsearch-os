@@ -11,6 +11,16 @@ vi.mock("ai", () => ({
   Output: {
     object: vi.fn((config) => config),
   },
+  // Stub matching the real ai SDK's shape closely enough for route.ts's
+  // `NoOutputGeneratedError.isInstance(error)` check in its catch block —
+  // without this, any exception that reaches the catch block (including
+  // ones unrelated to this class) fails with a confusing "no export"
+  // error from the mock instead of exercising the real code path.
+  NoOutputGeneratedError: class NoOutputGeneratedError {
+    static isInstance(): boolean {
+      return false;
+    }
+  },
 }));
 
 vi.mock("@ai-sdk/anthropic", () => ({
@@ -84,6 +94,59 @@ describe("POST /api/jobs/[id]/evaluate", () => {
 
     expect(res.status).toBe(404);
     expect(json).toEqual({ error: "Job not found" });
+  });
+
+  it("should return 400 if the job's posting text is entirely boilerplate", async () => {
+    const mockUser = { id: "user-123" };
+    const mockJob = {
+      id: "job-1",
+      user_id: mockUser.id,
+      raw_description:
+        "Equal Opportunity Employer. We do not discriminate based on race, gender, or other protected characteristics.",
+    };
+    const mockProfile = {
+      full_name: "Pearl Latteier",
+      resume: "Software engineer...",
+    };
+
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: mockUser },
+      error: null,
+    });
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === "jobs") {
+        return createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({ data: mockJob, error: null }),
+        });
+      }
+      if (table === "profiles") {
+        return createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
+        });
+      }
+      if (table === "evaluations") {
+        return createMockQueryBuilder({
+          eq: vi.fn().mockResolvedValue({ count: 0, error: null }),
+        });
+      }
+      if (table === "stories") {
+        return createMockQueryBuilder({
+          eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+        });
+      }
+      return {};
+    });
+
+    const res = await POST(makeRequest(), makeProps());
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json).toEqual({
+      error:
+        "This job's posting text is empty after removing boilerplate and can't be re-evaluated.",
+    });
+    expect(generateText).not.toHaveBeenCalled();
   });
 
   it("should return 400 if the profile has no resume", async () => {
