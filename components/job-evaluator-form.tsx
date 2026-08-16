@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Job } from "@/types/database";
+import { Job, Evaluation } from "@/types/database";
 import { Button } from "@/components/ui/button";
 
 interface JobEvaluatorFormProps {
-  onEvaluationComplete: (job: Job) => void;
+  onEvaluationComplete: (job: Job, evaluation: Evaluation) => void;
 }
 
 export function JobEvaluatorForm({
@@ -39,7 +39,7 @@ export function JobEvaluatorForm({
         throw new Error(data.error || "Failed to evaluate job posting.");
       }
 
-      onEvaluationComplete(data.job);
+      onEvaluationComplete(data.job, data.evaluation);
       setRawDescription("");
       setJobUrl("");
     } catch (err: unknown) {
@@ -76,7 +76,7 @@ export function JobEvaluatorForm({
       <div>
         <label
           htmlFor="job-url"
-          className="block text-[13px] font-semibold text-[#5C564C] mb-1.5"
+          className="block text-[13px] font-semibold text-muted-foreground-strong mb-1.5"
         >
           Job Listing URL (Optional)
         </label>
@@ -93,7 +93,7 @@ export function JobEvaluatorForm({
       <div>
         <label
           htmlFor="raw-description"
-          className="block text-[13px] font-semibold text-[#5C564C] mb-1.5"
+          className="block text-[13px] font-semibold text-muted-foreground-strong mb-1.5"
         >
           Raw Job Description Text
         </label>

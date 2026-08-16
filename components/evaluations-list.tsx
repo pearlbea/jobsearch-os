@@ -1,25 +1,32 @@
 "use client";
 
+import { RotateCw } from "lucide-react";
 import { JobSummary } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { getScoreBand } from "@/lib/score-band";
 
 interface EvaluationsListProps {
   jobs: JobSummary[];
   selectedJobId: string | null;
   onSelectJob: (jobId: string) => void;
+  onReevaluateJob?: (jobId: string) => void;
+  reevaluatingJobId?: string | null;
 }
 
 export function EvaluationsList({
   jobs,
   selectedJobId,
   onSelectJob,
+  onReevaluateJob,
+  reevaluatingJobId,
 }: EvaluationsListProps) {
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-[0_6px_20px_rgba(60,45,20,0.05)]">
       <div className="px-5 py-4 border-b border-border">
-        <h2 className="text-[13px] font-bold text-[#5C564C] uppercase tracking-wide">
+        <h2 className="text-[13px] font-bold text-muted-foreground-strong uppercase tracking-wide">
           Saved Evaluations ({jobs.length})
         </h2>
       </div>
@@ -29,6 +36,7 @@ export function EvaluationsList({
           const isSelected = job.id === selectedJobId;
           const score = job.match_score ?? 0;
           const band = getScoreBand(score);
+          const isReevaluatingThis = reevaluatingJobId === job.id;
 
           return (
             <div
@@ -58,6 +66,35 @@ export function EvaluationsList({
                   {new Date(job.created_at).toLocaleDateString()}
                 </p>
               </Button>
+
+              {onReevaluateJob && (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="mr-2 shrink-0 text-muted-foreground"
+                        disabled={isReevaluatingThis}
+                        aria-label="Re-evaluate with current resume"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onReevaluateJob(job.id);
+                        }}
+                      >
+                        <RotateCw
+                          className={cn(
+                            "size-3.5",
+                            isReevaluatingThis && "animate-spin",
+                          )}
+                        />
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>Re-evaluate with current resume</TooltipContent>
+                </Tooltip>
+              )}
             </div>
           );
         })}

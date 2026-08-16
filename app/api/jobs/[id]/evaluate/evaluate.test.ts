@@ -17,13 +17,26 @@ vi.mock("@ai-sdk/anthropic", () => ({
   anthropic: vi.fn(),
 }));
 
-import { POST } from "@/app/api/evaluate-job/route";
+import { POST } from "@/app/api/jobs/[id]/evaluate/route";
 import { generateText } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest } from "next/server";
-import { createMockQueryBuilder, createMockSupabaseClient } from "@/test/supabase-mock";
+import {
+  createMockQueryBuilder,
+  createMockSupabaseClient,
+} from "@/test/supabase-mock";
 
-describe("POST /api/evaluate-job", () => {
+function makeRequest() {
+  return new NextRequest("http://localhost:3000/api/jobs/job-1/evaluate", {
+    method: "POST",
+  });
+}
+
+function makeProps(id = "job-1") {
+  return { params: Promise.resolve({ id }) };
+}
+
+describe("POST /api/jobs/[id]/evaluate", () => {
   let mockSupabase: ReturnType<typeof createMockSupabaseClient>;
 
   beforeEach(() => {
@@ -31,90 +44,53 @@ describe("POST /api/evaluate-job", () => {
 
     mockSupabase = createMockSupabaseClient();
 
-    // route.ts calls createClient() to get its Supabase client — without
-    // this, the mocked createClient() resolves to undefined and every test
-    // crashes on `supabase.auth.getUser()`.
     (createClient as Mock).mockResolvedValue(
       mockSupabase as unknown as SupabaseClient,
     );
   });
 
   it("should return 401 if user is not authenticated", async () => {
-    // Mock unauthorized user
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: null },
       error: new Error("Unauthorized"),
     });
 
-    const req = new NextRequest("http://localhost:3000/api/evaluate-job", {
-      method: "POST",
-      body: JSON.stringify({
-        raw_description: "Software Engineer position...",
-      }),
-    });
-
-    const res = await POST(req);
+    const res = await POST(makeRequest(), makeProps());
     const json = await res.json();
 
     expect(res.status).toBe(401);
     expect(json).toEqual({ error: "Unauthorized" });
   });
 
-  it("should return 400 if raw_description is missing", async () => {
-    // Mock authenticated user
+  it("should return 404 if the job doesn't exist for this user", async () => {
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: { id: "user-123" } },
       error: null,
     });
 
-    const req = new NextRequest("http://localhost:3000/api/evaluate-job", {
-      method: "POST",
-      body: JSON.stringify({}),
-    });
-
-    const res = await POST(req);
-    const json = await res.json();
-
-    expect(res.status).toBe(400);
-    expect(json).toEqual({ error: "raw_description is required" });
-  });
-
-  it("should return 404 if user candidate profile is not found", async () => {
-    mockSupabase.auth.getUser.mockResolvedValue({
-      data: { user: { id: "user-123" } },
-      error: null,
-    });
-
-    // Mock profile query returning null
     mockSupabase.from.mockImplementation((table: string) => {
-      if (table === "profiles") {
+      if (table === "jobs") {
         return createMockQueryBuilder({
-          single: vi
-            .fn()
-            .mockResolvedValue({ data: null, error: new Error("Not found") }),
+          single: vi.fn().mockResolvedValue({ data: null, error: new Error("Not found") }),
         });
       }
       return {};
     });
 
-    const req = new NextRequest("http://localhost:3000/api/evaluate-job", {
-      method: "POST",
-      body: JSON.stringify({
-        raw_description: "Engineering Manager role at Lyric...",
-      }),
-    });
-
-    const res = await POST(req);
+    const res = await POST(makeRequest(), makeProps());
     const json = await res.json();
 
     expect(res.status).toBe(404);
-    expect(json).toEqual({
-      error: "Profile not found",
-    });
+    expect(json).toEqual({ error: "Job not found" });
   });
 
   it("should return 403 if the user has reached the evaluation limit", async () => {
     const mockUser = { id: "user-123" };
+    const mockJob = {
+      id: "job-1",
+      user_id: mockUser.id,
+      raw_description: "Engineering Manager role at Lyric...",
+    };
     const mockProfile = {
       full_name: "Pearl Latteier",
       target_titles: ["Platform TPM"],
@@ -129,6 +105,11 @@ describe("POST /api/evaluate-job", () => {
     });
 
     mockSupabase.from.mockImplementation((table: string) => {
+      if (table === "jobs") {
+        return createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({ data: mockJob, error: null }),
+        });
+      }
       if (table === "profiles") {
         return createMockQueryBuilder({
           single: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
@@ -142,14 +123,7 @@ describe("POST /api/evaluate-job", () => {
       return {};
     });
 
-    const req = new NextRequest("http://localhost:3000/api/evaluate-job", {
-      method: "POST",
-      body: JSON.stringify({
-        raw_description: "Engineering Manager role at Lyric...",
-      }),
-    });
-
-    const res = await POST(req);
+    const res = await POST(makeRequest(), makeProps());
     const json = await res.json();
 
     expect(res.status).toBe(403);
@@ -159,16 +133,22 @@ describe("POST /api/evaluate-job", () => {
     expect(generateText).not.toHaveBeenCalled();
   });
 
-  it("should evaluate job and save result to database successfully", async () => {
+  it("should re-evaluate the job, save a new evaluation, and refresh the job's latest snapshot", async () => {
     const mockUser = { id: "user-123" };
+    const mockJob = {
+      id: "job-1",
+      user_id: mockUser.id,
+      company_name: "Lyric",
+      role_title: "Engineering Manager",
+      raw_description: "Lyric is looking for an Engineering Manager...",
+    };
     const mockProfile = {
       full_name: "Pearl Latteier",
       target_titles: ["Platform TPM", "Engineering Manager"],
       location_preference: "Remote",
-      resume: "Software engineer and leader with 15 years experience...",
+      resume: "Software engineer and leader with 16 years experience...",
       technical_skills: ["TypeScript", "Next.js", "Go", "HIPAA"],
     };
-
     const mockStories = [
       {
         title: "Vercel Admin App",
@@ -177,36 +157,24 @@ describe("POST /api/evaluate-job", () => {
       },
     ];
 
-    // Matches compactEvaluationSchema (lib/schemas/evaluation.ts) — the
-    // short-key shape the route now asks the model for.
     const mockEvaluationResult = {
       co: "Lyric",
       title: "Engineering Manager",
       remote: true,
-      score: 88,
-      breakdown: {
-        tech: 90,
-        domain: 85,
-        scope: 90,
-      },
-      strengths: [
-        "Strong HealthTech background",
-        "Practical AI-assisted coding leadership",
-      ],
-      gaps: ["Multi-cloud Azure to AWS migration experience"],
-      advice:
-        "Highlight your Propeller Health experience alongside your Claude Code workflow.",
+      score: 93,
+      breakdown: { tech: 95, domain: 90, scope: 92 },
+      strengths: ["Updated resume highlights leadership scope"],
+      gaps: [],
+      advice: "Lead with your recent platform ownership.",
       skills: ["Engineering Leadership", "HealthTech Data"],
     };
 
-    // What route.ts actually stores — the compact keys mapped back to the
-    // full column/JSON shape (see `fullEvaluationSummary` in route.ts).
     const mockEvaluationSummary = {
-      match_score: 88,
+      match_score: 93,
       score_breakdown: {
-        technical_match: 90,
-        domain_match: 85,
-        leadership_match: 90,
+        technical_match: 95,
+        domain_match: 90,
+        leadership_match: 92,
       },
       key_strengths: mockEvaluationResult.strengths,
       potential_gaps: mockEvaluationResult.gaps,
@@ -218,31 +186,34 @@ describe("POST /api/evaluate-job", () => {
       },
     };
 
-    const mockSavedJob = {
-      id: "job-999",
-      user_id: mockUser.id,
-      company_name: "Lyric",
-      role_title: "Engineering Manager",
-      match_score: 88,
-      evaluation_summary: mockEvaluationSummary,
-    };
-
     const mockSavedEvaluation = {
-      id: "eval-999",
-      job_id: "job-999",
+      id: "eval-2",
+      job_id: "job-1",
       user_id: mockUser.id,
-      match_score: 88,
+      match_score: 93,
       evaluation_summary: mockEvaluationSummary,
       resume_snapshot: mockProfile.resume,
     };
 
-    // Mock Supabase Queries
+    const mockUpdatedJob = { ...mockJob, match_score: 93, evaluation_summary: mockEvaluationSummary };
+
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: mockUser },
       error: null,
     });
 
+    // First `.from("jobs")` call is the initial fetch (returns the
+    // pre-evaluation job); the second is the post-update `.select().single()`
+    // (returns the job with its refreshed latest-evaluation snapshot).
+    let jobsCallCount = 0;
     mockSupabase.from.mockImplementation((table: string) => {
+      if (table === "jobs") {
+        jobsCallCount += 1;
+        const data = jobsCallCount === 1 ? mockJob : mockUpdatedJob;
+        return createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({ data, error: null }),
+        });
+      }
       if (table === "profiles") {
         return createMockQueryBuilder({
           single: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
@@ -251,13 +222,6 @@ describe("POST /api/evaluate-job", () => {
       if (table === "stories") {
         return createMockQueryBuilder({
           eq: vi.fn().mockResolvedValue({ data: mockStories, error: null }),
-        });
-      }
-      if (table === "jobs") {
-        return createMockQueryBuilder({
-          single: vi
-            .fn()
-            .mockResolvedValue({ data: mockSavedJob, error: null }),
         });
       }
       if (table === "evaluations") {
@@ -270,26 +234,15 @@ describe("POST /api/evaluate-job", () => {
       return {};
     });
 
-    // Mock AI SDK generateText response (structured via Output.object)
-    (generateText as Mock).mockResolvedValue({
-      output: mockEvaluationResult,
-    });
+    (generateText as Mock).mockResolvedValue({ output: mockEvaluationResult });
 
-    const req = new NextRequest("http://localhost:3000/api/evaluate-job", {
-      method: "POST",
-      body: JSON.stringify({
-        raw_description: "Lyric is looking for an Engineering Manager...",
-        job_url: "https://lyric.ai/careers/em",
-      }),
-    });
-
-    const res = await POST(req);
+    const res = await POST(makeRequest(), makeProps());
     const json = await res.json();
 
     expect(res.status).toBe(200);
     expect(json).toEqual({
       success: true,
-      job: mockSavedJob,
+      job: mockUpdatedJob,
       evaluation: mockSavedEvaluation,
     });
     expect(generateText).toHaveBeenCalledTimes(1);

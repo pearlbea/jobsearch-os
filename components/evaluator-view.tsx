@@ -3,12 +3,13 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { Job, JobSummary } from "@/types/database";
+import { Job, JobSummary, Evaluation } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { JobEvaluatorForm } from "@/components/job-evaluator-form";
 import { EvaluationCard } from "@/components/evaluation-card";
 import { EvaluationsList } from "@/components/evaluations-list";
+import { EvaluationHistory } from "@/components/evaluation-history";
 
 export function EvaluatorView() {
   return (
@@ -41,7 +42,14 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
   const supabase = createClient();
 
   const [activeJob, setActiveJob] = useState<Job | null>(null);
+  const [evaluationHistory, setEvaluationHistory] = useState<Evaluation[]>([]);
+  const [activeEvaluationId, setActiveEvaluationId] = useState<string | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(!!jobId);
+  const [reevaluatingJobId, setReevaluatingJobId] = useState<string | null>(
+    null,
+  );
   const [notFound, setNotFound] = useState(false);
   const [jobSummaries, setJobSummaries] = useState<JobSummary[]>([]);
 
@@ -85,9 +93,12 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to load job");
         const job = data.job as Job;
+        const evaluations = data.evaluations as Evaluation[];
 
         if (!cancelled) {
           setActiveJob(job);
+          setEvaluationHistory(evaluations);
+          setActiveEvaluationId(evaluations[0]?.id ?? null);
         }
       } catch (err) {
         console.error("Error loading evaluation:", err);
@@ -106,8 +117,10 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
     };
   }, [jobId]);
 
-  const handleEvaluationComplete = (newJob: Job) => {
+  const handleEvaluationComplete = (newJob: Job, newEvaluation: Evaluation) => {
     setActiveJob(newJob);
+    setEvaluationHistory([newEvaluation]);
+    setActiveEvaluationId(newEvaluation.id);
     setNotFound(false);
     setJobSummaries((prev) => [
       {
@@ -125,6 +138,45 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
   const handleSelectJob = (selectedJobId: string) => {
     router.push(`/evaluator?job=${encodeURIComponent(selectedJobId)}`);
   };
+
+  const handleReevaluate = async (targetJobId: string) => {
+    setReevaluatingJobId(targetJobId);
+    try {
+      const res = await fetch(
+        `/api/jobs/${encodeURIComponent(targetJobId)}/evaluate`,
+        { method: "POST" },
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to re-evaluate job.");
+
+      const updatedJob = data.job as Job;
+      const newEvaluation = data.evaluation as Evaluation;
+
+      setJobSummaries((prev) =>
+        prev.map((j) =>
+          j.id === updatedJob.id
+            ? { ...j, match_score: updatedJob.match_score }
+            : j,
+        ),
+      );
+
+      // Only refresh the open card/history if this is the job currently on screen
+      if (activeJob?.id === updatedJob.id) {
+        setActiveJob(updatedJob);
+        setEvaluationHistory((prev) => [newEvaluation, ...prev]);
+        setActiveEvaluationId(newEvaluation.id);
+      }
+    } catch (err) {
+      console.error("Error re-evaluating job:", err);
+    } finally {
+      setReevaluatingJobId(null);
+    }
+  };
+
+  const selectedEvaluation =
+    evaluationHistory.find((e) => e.id === activeEvaluationId) ??
+    evaluationHistory[0] ??
+    null;
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col gap-6">
@@ -150,6 +202,8 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
             jobs={jobSummaries}
             selectedJobId={jobId}
             onSelectJob={handleSelectJob}
+            onReevaluateJob={handleReevaluate}
+            reevaluatingJobId={reevaluatingJobId}
           />
         )}
 
@@ -157,8 +211,22 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
           <div className="p-12 bg-card border border-border rounded-2xl text-center text-sm text-muted-foreground">
             Loading evaluation report...
           </div>
-        ) : activeJob ? (
-          <EvaluationCard job={activeJob} />
+        ) : activeJob && selectedEvaluation ? (
+          <div className="flex flex-col gap-6">
+            {evaluationHistory.length > 1 && (
+              <EvaluationHistory
+                evaluations={evaluationHistory}
+                selectedEvaluationId={selectedEvaluation.id}
+                onSelectEvaluation={setActiveEvaluationId}
+              />
+            )}
+            <EvaluationCard
+              job={activeJob}
+              evaluation={selectedEvaluation}
+              onReevaluate={() => handleReevaluate(activeJob.id)}
+              isReevaluating={reevaluatingJobId === activeJob.id}
+            />
+          </div>
         ) : (
           <div className="p-12 bg-card border border-border rounded-2xl text-center text-sm text-muted-foreground">
             {notFound

@@ -3,7 +3,28 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
 import { JobEvaluatorForm } from "./job-evaluator-form";
-import type { Job } from "@/types/database";
+import type { Job, Evaluation } from "@/types/database";
+
+const mockEvaluation: Evaluation = {
+  id: "eval-1",
+  job_id: "job-1",
+  user_id: "user-1",
+  match_score: 78,
+  evaluation_summary: {
+    match_score: 78,
+    score_breakdown: { technical_match: 80, domain_match: 75, leadership_match: 78 },
+    key_strengths: ["Strong technical background"],
+    potential_gaps: [],
+    positioning_advice: "Lead with your platform experience.",
+    parsed_requirements: {
+      required_skills: [],
+      preferred_skills: [],
+      is_remote: true,
+    },
+  },
+  resume_snapshot: "Software engineer...",
+  created_at: "2026-08-01T00:00:00Z",
+};
 
 const mockJob: Job = {
   id: "job-1",
@@ -15,7 +36,7 @@ const mockJob: Job = {
   raw_description: "We are looking for a manager...",
   status: "bookmarked",
   match_score: 78,
-  evaluation_summary: null,
+  evaluation_summary: mockEvaluation.evaluation_summary,
   created_at: "2026-08-01T00:00:00Z",
   updated_at: null,
 };
@@ -56,7 +77,7 @@ describe("JobEvaluatorForm Component", () => {
       vi.fn(() =>
         Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ job: mockJob }),
+          json: () => Promise.resolve({ job: mockJob, evaluation: mockEvaluation }),
         } as Response),
       ),
     );
@@ -75,7 +96,7 @@ describe("JobEvaluatorForm Component", () => {
     await user.click(screen.getByRole("button", { name: /evaluate match/i }));
 
     await waitFor(() => {
-      expect(onEvaluationComplete).toHaveBeenCalledWith(mockJob);
+      expect(onEvaluationComplete).toHaveBeenCalledWith(mockJob, mockEvaluation);
     });
 
     expect(fetch).toHaveBeenCalledWith("/api/evaluate-job", {
@@ -118,7 +139,10 @@ describe("JobEvaluatorForm Component", () => {
       screen.getByRole("button", { name: /evaluating listing/i }),
     ).toBeDisabled();
 
-    resolveFetch!({ ok: true, json: () => Promise.resolve({ job: mockJob }) });
+    resolveFetch!({
+      ok: true,
+      json: () => Promise.resolve({ job: mockJob, evaluation: mockEvaluation }),
+    });
     await waitFor(() => {
       expect(onEvaluationComplete).toHaveBeenCalled();
     });

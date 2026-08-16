@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import axe from "axe-core";
 import { EvaluationCard } from "./evaluation-card";
-import type { EvaluationSummary, Job } from "@/types/database";
+import type { EvaluationSummary, Job, Evaluation } from "@/types/database";
 
-const baseEvaluation: EvaluationSummary = {
+const baseEvaluationSummary: EvaluationSummary = {
   match_score: 82,
   score_breakdown: {
     technical_match: 90,
@@ -22,6 +22,16 @@ const baseEvaluation: EvaluationSummary = {
   },
 };
 
+const baseEvaluation: Evaluation = {
+  id: "eval-1",
+  job_id: "job-1",
+  user_id: "user-1",
+  match_score: 82,
+  evaluation_summary: baseEvaluationSummary,
+  resume_snapshot: "Software engineer...",
+  created_at: "2026-08-01T00:00:00Z",
+};
+
 const baseJob: Job = {
   id: "job-1",
   user_id: "user-1",
@@ -32,23 +42,14 @@ const baseJob: Job = {
   raw_description: "We are looking for...",
   status: "bookmarked",
   match_score: 82,
-  evaluation_summary: baseEvaluation,
+  evaluation_summary: baseEvaluationSummary,
   created_at: "2026-08-01T00:00:00Z",
   updated_at: null,
 };
 
 describe("EvaluationCard Component", () => {
-  it("shows a fallback message when there is no evaluation summary", () => {
-    render(<EvaluationCard job={{ ...baseJob, evaluation_summary: null }} />);
-
-    expect(
-      screen.getByText(/no evaluation summary available/i),
-    ).toBeInTheDocument();
-    expect(screen.queryByText("Engineering Manager")).not.toBeInTheDocument();
-  });
-
   it("displays the role, company, location, and overall match score", () => {
-    render(<EvaluationCard job={baseJob} />);
+    render(<EvaluationCard job={baseJob} evaluation={baseEvaluation} />);
 
     expect(screen.getByText("Engineering Manager")).toBeInTheDocument();
     expect(screen.getByText("Acme Corp")).toBeInTheDocument();
@@ -57,23 +58,31 @@ describe("EvaluationCard Component", () => {
   });
 
   it("falls back to a placeholder when location is missing", () => {
-    render(<EvaluationCard job={{ ...baseJob, location: null }} />);
+    render(
+      <EvaluationCard
+        job={{ ...baseJob, location: null }}
+        evaluation={baseEvaluation}
+      />,
+    );
 
     expect(screen.getByText(/location not specified/i)).toBeInTheDocument();
   });
 
   it("shows a Remote badge only when the role is remote", () => {
-    const { rerender } = render(<EvaluationCard job={baseJob} />);
+    const { rerender } = render(
+      <EvaluationCard job={baseJob} evaluation={baseEvaluation} />,
+    );
     expect(screen.getByText("Remote")).toBeInTheDocument();
 
     rerender(
       <EvaluationCard
-        job={{
-          ...baseJob,
+        job={baseJob}
+        evaluation={{
+          ...baseEvaluation,
           evaluation_summary: {
-            ...baseEvaluation,
+            ...baseEvaluationSummary,
             parsed_requirements: {
-              ...baseEvaluation.parsed_requirements,
+              ...baseEvaluationSummary.parsed_requirements,
               is_remote: false,
             },
           },
@@ -84,17 +93,20 @@ describe("EvaluationCard Component", () => {
   });
 
   it("shows a salary badge only when a salary range is provided", () => {
-    const { rerender } = render(<EvaluationCard job={baseJob} />);
+    const { rerender } = render(
+      <EvaluationCard job={baseJob} evaluation={baseEvaluation} />,
+    );
     expect(screen.getByText(/\$150k - \$180k/)).toBeInTheDocument();
 
     rerender(
       <EvaluationCard
-        job={{
-          ...baseJob,
+        job={baseJob}
+        evaluation={{
+          ...baseEvaluation,
           evaluation_summary: {
-            ...baseEvaluation,
+            ...baseEvaluationSummary,
             parsed_requirements: {
-              ...baseEvaluation.parsed_requirements,
+              ...baseEvaluationSummary.parsed_requirements,
               salary_range: undefined,
             },
           },
@@ -105,7 +117,7 @@ describe("EvaluationCard Component", () => {
   });
 
   it("lists key strengths and potential gaps", () => {
-    render(<EvaluationCard job={baseJob} />);
+    render(<EvaluationCard job={baseJob} evaluation={baseEvaluation} />);
 
     expect(
       screen.getByText("Led a platform migration"),
@@ -119,7 +131,7 @@ describe("EvaluationCard Component", () => {
   });
 
   it("shows the positioning advice", () => {
-    render(<EvaluationCard job={baseJob} />);
+    render(<EvaluationCard job={baseJob} evaluation={baseEvaluation} />);
 
     expect(
       screen.getByText(/emphasize your platform leadership track record/i),
@@ -127,15 +139,18 @@ describe("EvaluationCard Component", () => {
   });
 
   it("renders the ATS filter simulation only when ats_analysis is present", () => {
-    const { rerender } = render(<EvaluationCard job={baseJob} />);
+    const { rerender } = render(
+      <EvaluationCard job={baseJob} evaluation={baseEvaluation} />,
+    );
     expect(screen.queryByText(/ATS Filter Simulation/i)).not.toBeInTheDocument();
 
     rerender(
       <EvaluationCard
-        job={{
-          ...baseJob,
+        job={baseJob}
+        evaluation={{
+          ...baseEvaluation,
           evaluation_summary: {
-            ...baseEvaluation,
+            ...baseEvaluationSummary,
             ats_analysis: {
               missing_exact_keywords: ["Kubernetes", "GraphQL"],
               formatting_warnings: [],
@@ -152,13 +167,47 @@ describe("EvaluationCard Component", () => {
     expect(screen.getByText("GraphQL")).toBeInTheDocument();
   });
 
+  it("shows a re-evaluate button only when onReevaluate is provided, and reflects the loading state", () => {
+    const { rerender } = render(
+      <EvaluationCard job={baseJob} evaluation={baseEvaluation} />,
+    );
+    expect(
+      screen.queryByRole("button", { name: /re-evaluate/i }),
+    ).not.toBeInTheDocument();
+
+    const onReevaluate = vi.fn();
+    rerender(
+      <EvaluationCard
+        job={baseJob}
+        evaluation={baseEvaluation}
+        onReevaluate={onReevaluate}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: /re-evaluate with current resume/i }),
+    ).toBeEnabled();
+
+    rerender(
+      <EvaluationCard
+        job={baseJob}
+        evaluation={baseEvaluation}
+        onReevaluate={onReevaluate}
+        isReevaluating
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: /re-evaluating/i }),
+    ).toBeDisabled();
+  });
+
   it("has no detectable accessibility violations", async () => {
     const { container } = render(
       <EvaluationCard
-        job={{
-          ...baseJob,
+        job={baseJob}
+        evaluation={{
+          ...baseEvaluation,
           evaluation_summary: {
-            ...baseEvaluation,
+            ...baseEvaluationSummary,
             ats_analysis: {
               missing_exact_keywords: ["Kubernetes"],
               formatting_warnings: [],

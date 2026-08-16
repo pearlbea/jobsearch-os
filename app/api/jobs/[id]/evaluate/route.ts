@@ -6,8 +6,13 @@ import {
   runEvaluation,
 } from "@/lib/evaluation-engine";
 
-export async function POST(req: NextRequest) {
+export async function POST(
+  req: NextRequest,
+  props: { params: Promise<{ id: string }> },
+) {
   try {
+    const { id } = await props.params;
+
     const supabase = await createClient();
 
     const {
@@ -18,15 +23,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { raw_description, job_url } = await req.json();
-    if (!raw_description) {
-      return NextResponse.json(
-        { error: "raw_description is required" },
-        { status: 400 },
-      );
+    // 1. Fetch the job scoped to this user (also gives us raw_description)
+    const { data: job } = await supabase
+      .from("jobs")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!job) {
+      return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
-    // 1. Fetch compact profile fields only
+    // 2. Fetch compact profile fields only
     const { data: profile } = await supabase
       .from("profiles")
       .select(
@@ -39,7 +48,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    // 2. Enforce the per-user evaluation cap before spending any tokens
+    // 3. Enforce the per-user evaluation cap before spending any tokens
     const { count: evaluationCount, error: countError } = await supabase
       .from("evaluations")
       .select("id", { count: "exact", head: true })
@@ -56,46 +65,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Fetch story metadata only (omit full story_text to save input tokens)
+    // 4. Fetch story metadata only (omit full story_text to save input tokens)
     const { data: stories } = await supabase
       .from("stories")
       .select("title, company, competencies")
       .eq("user_id", user.id);
 
-    // 4. Pre-process job description to drop non-essential footer text
-    const cleanedDescription = cleanJobDescription(raw_description);
+    // 5. Re-run against the job's stored posting text and the current profile
+    const cleanedDescription = cleanJobDescription(job.raw_description);
 
-    // 5. Run the evaluation
     const { evalResult, fullEvaluationSummary } = await runEvaluation({
       profile,
       stories,
       cleanedDescription,
     });
 
-    // 6. Save the job (with the latest-evaluation snapshot denormalized on)
-    const { data: savedJob, error: insertError } = await supabase
-      .from("jobs")
-      .insert({
-        user_id: user.id,
-        company_name: evalResult.co,
-        role_title: evalResult.title,
-        location: evalResult.remote ? "Remote" : profile.location_preference,
-        job_url: job_url || null,
-        raw_description,
-        status: "bookmarked",
-        match_score: evalResult.score,
-        evaluation_summary: fullEvaluationSummary,
-      })
-      .select()
-      .single();
-
-    if (insertError) throw insertError;
-
-    // 7. Save the first evaluation row for this job's history
+    // 6. Save the new evaluation row
     const { data: savedEvaluation, error: evalInsertError } = await supabase
       .from("evaluations")
       .insert({
-        job_id: savedJob.id,
+        job_id: job.id,
         user_id: user.id,
         match_score: evalResult.score,
         evaluation_summary: fullEvaluationSummary,
@@ -106,13 +95,28 @@ export async function POST(req: NextRequest) {
 
     if (evalInsertError) throw evalInsertError;
 
+    // 7. Refresh the job's latest-evaluation snapshot
+    const { data: updatedJob, error: updateError } = await supabase
+      .from("jobs")
+      .update({
+        match_score: evalResult.score,
+        evaluation_summary: fullEvaluationSummary,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id)
+      .eq("user_id", user.id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
     return NextResponse.json({
       success: true,
-      job: savedJob,
+      job: updatedJob,
       evaluation: savedEvaluation,
     });
   } catch (error) {
-    console.error("Optimized Evaluation Error:", error);
+    console.error("Re-evaluation Error:", error);
     return NextResponse.json({ error: "Evaluation failed" }, { status: 500 });
   }
 }

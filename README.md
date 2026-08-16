@@ -49,8 +49,10 @@ Evaluations are saved to your account so you can revisit them later.
    ```
 
 2. In your Supabase project, create tables matching the shapes defined in
-   [`types/database.ts`](types/database.ts): `profiles`, `jobs`, and
-   `stories`. Enable email/password auth.
+   [`types/database.ts`](types/database.ts): `profiles`, `jobs`, `stories`,
+   and `evaluations` (one row per evaluation run against a job — `jobs`
+   keeps a denormalized snapshot of the latest one). Enable email/password
+   auth.
 
 3. Create a `.env.local` file in the project root:
 

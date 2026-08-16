@@ -24,6 +24,19 @@ vi.mock("@/components/job-evaluator-form", () => ({
   JobEvaluatorForm: () => <div data-testid="job-evaluator-form" />,
 }));
 
+const mockEvaluationSummary = {
+  match_score: 82,
+  score_breakdown: { technical_match: 90, domain_match: 75, leadership_match: 80 },
+  key_strengths: ["Led a platform migration"],
+  potential_gaps: ["Limited regulated-industry experience"],
+  positioning_advice: "Emphasize your platform leadership track record.",
+  parsed_requirements: {
+    required_skills: ["TypeScript"],
+    preferred_skills: [],
+    is_remote: true,
+  },
+};
+
 const mockJob = {
   id: "job-1",
   user_id: "user-1",
@@ -34,20 +47,19 @@ const mockJob = {
   raw_description: "We are looking for a manager...",
   status: "bookmarked",
   match_score: 82,
-  evaluation_summary: {
-    match_score: 82,
-    score_breakdown: { technical_match: 90, domain_match: 75, leadership_match: 80 },
-    key_strengths: ["Led a platform migration"],
-    potential_gaps: ["Limited regulated-industry experience"],
-    positioning_advice: "Emphasize your platform leadership track record.",
-    parsed_requirements: {
-      required_skills: ["TypeScript"],
-      preferred_skills: [],
-      is_remote: true,
-    },
-  },
+  evaluation_summary: mockEvaluationSummary,
   created_at: "2026-08-01T00:00:00Z",
   updated_at: null,
+};
+
+const mockEvaluation = {
+  id: "eval-1",
+  job_id: "job-1",
+  user_id: "user-1",
+  match_score: 82,
+  evaluation_summary: mockEvaluationSummary,
+  resume_snapshot: "Software engineer...",
+  created_at: "2026-08-01T00:00:00Z",
 };
 
 describe("EvaluatorView", () => {
@@ -81,7 +93,8 @@ describe("EvaluatorView", () => {
       vi.fn(() =>
         Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ job: mockJob }),
+          json: () =>
+            Promise.resolve({ job: mockJob, evaluations: [mockEvaluation] }),
         } as Response),
       ),
     );
@@ -149,7 +162,8 @@ describe("EvaluatorView", () => {
       vi.fn(() =>
         Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ job: mockJob }),
+          json: () =>
+            Promise.resolve({ job: mockJob, evaluations: [mockEvaluation] }),
         } as Response),
       ),
     );
