@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SCORE_DIMENSIONS } from "@/lib/score-dimensions";
 
 // Short keys reduce completion token overhead by ~40%
 export const compactEvaluationSchema = z.object({
@@ -7,27 +8,17 @@ export const compactEvaluationSchema = z.object({
   remote: z.boolean().describe("Is fully remote"),
   score: z.number().min(0).max(100).describe("0-100 match score"),
   breakdown: z.object({
-    tech: z
-      .number()
-      .min(0)
-      .max(100)
-      .describe(
-        "Technical match: overlap between the candidate's hands-on tools, languages, and frameworks and those the role requires.",
-      ),
+    tech: z.number().min(0).max(100).describe(SCORE_DIMENSIONS.tech.description),
     domain: z
       .number()
       .min(0)
       .max(100)
-      .describe(
-        "Domain match: how closely the candidate's industry/business-domain experience (e.g. healthtech, fintech, developer tools) aligns with this role's domain.",
-      ),
+      .describe(SCORE_DIMENSIONS.domain.description),
     scope: z
       .number()
       .min(0)
       .max(100)
-      .describe(
-        "Leadership/scope match: how well the candidate's level of responsibility (team size managed, decision-making authority, IC vs. management track, org scope of impact) matches what this role requires. Evaluate independently of technical or domain fit.",
-      ),
+      .describe(SCORE_DIMENSIONS.scope.description),
   }),
   ats_analysis: z.object({
     missing_exact_keywords: z

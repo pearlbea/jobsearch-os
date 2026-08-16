@@ -8,15 +8,7 @@ import {
 } from "@/components/ui/tooltip";
 import Link from "next/link";
 import { bandStyles, getScoreBand } from "@/lib/score-band";
-
-const SCORE_DESCRIPTIONS = {
-  technical_match:
-    "How well your hands-on tools, languages, and frameworks match what this role requires.",
-  domain_match:
-    "How closely your industry and business-domain experience lines up with this role.",
-  leadership_match:
-    "How well the scope of your role — team size managed, decision-making authority, IC vs. management track — matches what this role calls for.",
-} as const;
+import { SCORE_DIMENSIONS } from "@/lib/score-dimensions";
 
 interface EvaluationCardProps {
   job: Job;
@@ -95,19 +87,19 @@ export function EvaluationCard({
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
         <ScoreBar
-          label="Technical Match"
-          score={score_breakdown?.technical_match || 0}
-          description={SCORE_DESCRIPTIONS.technical_match}
+          label={SCORE_DIMENSIONS.tech.label}
+          score={score_breakdown?.[SCORE_DIMENSIONS.tech.fullKey]}
+          description={SCORE_DIMENSIONS.tech.description}
         />
         <ScoreBar
-          label="Domain Match"
-          score={score_breakdown?.domain_match || 0}
-          description={SCORE_DESCRIPTIONS.domain_match}
+          label={SCORE_DIMENSIONS.domain.label}
+          score={score_breakdown?.[SCORE_DIMENSIONS.domain.fullKey]}
+          description={SCORE_DIMENSIONS.domain.description}
         />
         <ScoreBar
-          label="Leadership / Scope"
-          score={score_breakdown?.leadership_match || 0}
-          description={SCORE_DESCRIPTIONS.leadership_match}
+          label={SCORE_DIMENSIONS.scope.label}
+          score={score_breakdown?.[SCORE_DIMENSIONS.scope.fullKey]}
+          description={SCORE_DIMENSIONS.scope.description}
         />
       </div>
 
@@ -129,14 +121,20 @@ export function EvaluationCard({
             Key Matching Strengths
           </h4>
           <ul className="flex flex-col gap-2.5 text-sm text-muted-foreground-strong leading-relaxed">
-            {key_strengths?.map((strength, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span style={{ color: "#1E7A4C" }} className="mt-0.5">
-                  ●
-                </span>
-                <span>{strength}</span>
+            {key_strengths?.length ? (
+              key_strengths.map((strength, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span style={{ color: "#1E7A4C" }} className="mt-0.5">
+                    ●
+                  </span>
+                  <span>{strength}</span>
+                </li>
+              ))
+            ) : (
+              <li className="text-muted-foreground">
+                No standout strengths identified.
               </li>
-            ))}
+            )}
           </ul>
         </div>
 
@@ -148,14 +146,20 @@ export function EvaluationCard({
             Potential Gaps / Friction Areas
           </h4>
           <ul className="flex flex-col gap-2.5 text-sm text-muted-foreground-strong leading-relaxed">
-            {potential_gaps?.map((gap, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span style={{ color: "#9D681B" }} className="mt-0.5">
-                  ●
-                </span>
-                <span>{gap}</span>
+            {potential_gaps?.length ? (
+              potential_gaps.map((gap, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span style={{ color: "#9D681B" }} className="mt-0.5">
+                    ●
+                  </span>
+                  <span>{gap}</span>
+                </li>
+              ))
+            ) : (
+              <li className="text-muted-foreground">
+                No significant gaps identified.
               </li>
-            ))}
+            )}
           </ul>
         </div>
       </div>
@@ -186,10 +190,13 @@ function ScoreBar({
   description,
 }: {
   label: string;
-  score: number;
+  score: number | undefined;
   description: string;
 }) {
-  const color = bandStyles[getScoreBand(score)].barColor;
+  const hasScore = typeof score === "number";
+  const color = hasScore
+    ? bandStyles[getScoreBand(score)].barColor
+    : "var(--muted-foreground)";
 
   return (
     <div className="bg-background rounded-[10px] px-4 py-3.5">
@@ -206,13 +213,13 @@ function ScoreBar({
           </TooltipContent>
         </Tooltip>
         <span className="font-bold" style={{ color }}>
-          {score}%
+          {hasScore ? `${score}%` : "N/A"}
         </span>
       </div>
       <div className="h-1.5 rounded-full bg-border overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${score}%`, background: color }}
+          style={{ width: hasScore ? `${score}%` : "0%", background: color }}
         />
       </div>
     </div>
