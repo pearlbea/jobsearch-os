@@ -38,10 +38,23 @@ export interface Job {
   job_url: string | null;
   raw_description: string;
   status: ApplicationStatus;
+  // Denormalized snapshot of the most recent row in `evaluations` for this
+  // job, kept in sync on every insert/re-evaluation so list views don't need
+  // to join. The full history lives in `evaluations`.
   match_score: number | null;
   evaluation_summary: EvaluationSummary | null;
   created_at: string;
   updated_at: string | null;
+}
+
+export interface Evaluation {
+  id: string;
+  job_id: string;
+  user_id: string;
+  match_score: number;
+  evaluation_summary: EvaluationSummary;
+  resume_snapshot: string | null;
+  created_at: string;
 }
 
 export interface JobSummary {
@@ -98,6 +111,16 @@ export interface Database {
             "user_id" | "company_name" | "role_title" | "raw_description"
           >;
         Update: Partial<Job>;
+        Relationships: [];
+      };
+      evaluations: {
+        Row: Evaluation;
+        Insert: Partial<Evaluation> &
+          Pick<
+            Evaluation,
+            "job_id" | "user_id" | "match_score" | "evaluation_summary"
+          >;
+        Update: Partial<Evaluation>;
         Relationships: [];
       };
     };

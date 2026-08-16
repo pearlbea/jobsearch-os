@@ -1,35 +1,34 @@
-import { Job, EvaluationSummary } from "@/types/database";
+import { Job, Evaluation } from "@/types/database";
 import { AtsKeywordTable } from "@/components/ats-keyword-table";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { bandStyles, getScoreBand } from "@/lib/score-band";
 
 interface EvaluationCardProps {
   job: Job;
+  evaluation: Evaluation;
+  onReevaluate?: () => void;
+  isReevaluating?: boolean;
 }
 
-export function EvaluationCard({ job }: EvaluationCardProps) {
-  const evalData = job.evaluation_summary as EvaluationSummary | undefined;
-
-  if (!evalData) {
-    return (
-      <div className="p-6 bg-card border border-border rounded-lg text-muted-foreground text-sm">
-        No evaluation summary available for this job.
-      </div>
-    );
-  }
-
+export function EvaluationCard({
+  job,
+  evaluation,
+  onReevaluate,
+  isReevaluating,
+}: EvaluationCardProps) {
   const {
-    score_breakdown,
-    key_strengths,
-    potential_gaps,
-    positioning_advice,
-    parsed_requirements,
-    ats_analysis,
-  } = evalData;
+    match_score: matchScore,
+    evaluation_summary: {
+      score_breakdown,
+      key_strengths,
+      potential_gaps,
+      positioning_advice,
+      parsed_requirements,
+      ats_analysis,
+    },
+  } = evaluation;
 
-  // Prefer the top-level `jobs.match_score` column — it's always populated
-  // by the insert (see app/api/evaluate-job/route.ts) — over the nested
-  // evaluation_summary copy, which can be missing on older rows.
-  const matchScore = job.match_score ?? evalData.match_score ?? 0;
   const band = getScoreBand(matchScore);
   const badge = bandStyles[band];
 
@@ -40,7 +39,22 @@ export function EvaluationCard({ job }: EvaluationCardProps) {
           <h2 className="text-2xl font-extrabold tracking-tight text-foreground mb-1">
             {job.role_title}
           </h2>
-          <div className="text-[15px] text-[#5C564C] mb-2">{job.company_name}</div>
+          <div className="text-[15px] text-muted-foreground-strong mb-2">
+            {job.company_name}
+          </div>
+          {job.job_url && /^https?:\/\//i.test(job.job_url) && (
+            <div className="text-[15px] text-muted-foreground-strong mb-2">
+              <Link
+                className="text-sm text-muted-foreground hover:text-foreground"
+                href={job.job_url}
+                prefetch={false}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                {job.job_url}
+              </Link>
+            </div>
+          )}
           <div className="text-[13px] text-muted-foreground flex items-center gap-2 flex-wrap">
             <span>{job.location || "Location not specified"}</span>
             {parsed_requirements?.is_remote && (
@@ -57,9 +71,15 @@ export function EvaluationCard({ job }: EvaluationCardProps) {
         </div>
         <div
           className="text-center rounded-xl px-5.5 py-3 min-w-[100px] shrink-0"
-          style={{ background: badge.badgeBg, border: `1px solid ${badge.badgeColor}33` }}
+          style={{
+            background: badge.badgeBg,
+            border: `1px solid ${badge.badgeColor}33`,
+          }}
         >
-          <div className="text-2xl font-extrabold leading-none" style={{ color: badge.badgeColor }}>
+          <div
+            className="text-2xl font-extrabold leading-none"
+            style={{ color: badge.badgeColor }}
+          >
             {matchScore}%
           </div>
           <div
@@ -75,24 +95,38 @@ export function EvaluationCard({ job }: EvaluationCardProps) {
         SCORE BREAKDOWN
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
-        <ScoreBar label="Technical Match" score={score_breakdown?.technical_match || 0} />
-        <ScoreBar label="Domain Match" score={score_breakdown?.domain_match || 0} />
-        <ScoreBar label="Leadership / Scope" score={score_breakdown?.leadership_match || 0} />
+        <ScoreBar
+          label="Technical Match"
+          score={score_breakdown?.technical_match || 0}
+        />
+        <ScoreBar
+          label="Domain Match"
+          score={score_breakdown?.domain_match || 0}
+        />
+        <ScoreBar
+          label="Leadership / Scope"
+          score={score_breakdown?.leadership_match || 0}
+        />
       </div>
 
       <div className="bg-background border-l-[3px] border-primary rounded-[10px] px-5 py-4 mb-7">
         <h3 className="text-[13px] font-bold text-foreground mb-1.5">
           Recommended Positioning Strategy
         </h3>
-        <p className="text-sm leading-relaxed text-[#5C564C]">{positioning_advice}</p>
+        <p className="text-sm leading-relaxed text-muted-foreground-strong">
+          {positioning_advice}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         <div>
-          <h4 className="text-[13px] font-bold mb-3" style={{ color: "#1E7A4C" }}>
+          <h4
+            className="text-[13px] font-bold mb-3"
+            style={{ color: "#1E7A4C" }}
+          >
             Key Matching Strengths
           </h4>
-          <ul className="flex flex-col gap-2.5 text-sm text-[#5C564C] leading-relaxed">
+          <ul className="flex flex-col gap-2.5 text-sm text-muted-foreground-strong leading-relaxed">
             {key_strengths?.map((strength, idx) => (
               <li key={idx} className="flex items-start gap-2">
                 <span style={{ color: "#1E7A4C" }} className="mt-0.5">
@@ -105,10 +139,13 @@ export function EvaluationCard({ job }: EvaluationCardProps) {
         </div>
 
         <div>
-          <h4 className="text-[13px] font-bold mb-3" style={{ color: "#9D681B" }}>
+          <h4
+            className="text-[13px] font-bold mb-3"
+            style={{ color: "#9D681B" }}
+          >
             Potential Gaps / Friction Areas
           </h4>
-          <ul className="flex flex-col gap-2.5 text-sm text-[#5C564C] leading-relaxed">
+          <ul className="flex flex-col gap-2.5 text-sm text-muted-foreground-strong leading-relaxed">
             {potential_gaps?.map((gap, idx) => (
               <li key={idx} className="flex items-start gap-2">
                 <span style={{ color: "#9D681B" }} className="mt-0.5">
@@ -122,6 +159,21 @@ export function EvaluationCard({ job }: EvaluationCardProps) {
       </div>
 
       {ats_analysis && <AtsKeywordTable atsAnalysis={ats_analysis} />}
+
+      {onReevaluate && (
+        <div className="flex justify-end mt-6 pt-6 border-t border-border">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onReevaluate}
+            disabled={isReevaluating}
+          >
+            {isReevaluating
+              ? "Re-evaluating..."
+              : "Re-evaluate with current resume"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -132,7 +184,7 @@ function ScoreBar({ label, score }: { label: string; score: number }) {
   return (
     <div className="bg-background rounded-[10px] px-4 py-3.5">
       <div className="flex justify-between text-[13px] mb-2">
-        <span className="font-semibold text-[#5C564C]">{label}</span>
+        <span className="font-semibold text-muted-foreground-strong">{label}</span>
         <span className="font-bold" style={{ color }}>
           {score}%
         </span>

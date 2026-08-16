@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { ThemeScript } from "@/lib/theme-script";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -16,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JobSearch OS",
+  title: "JobFit Scorecard",
   description:
     "Evaluate job postings against your profile and track your search.",
 };
@@ -34,7 +35,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         "font-sans",
         inter.variable,
       )}
+      suppressHydrationWarning
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body className="min-h-full max-w-7xl mx-auto flex flex-col bg-background text-foreground">
         {children}
       </body>

@@ -11,6 +11,7 @@ export function createMockQueryBuilder(overrides: Record<string, unknown> = {}) 
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     upsert: vi.fn().mockResolvedValue({ error: null }),

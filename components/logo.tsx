@@ -18,7 +18,7 @@ export function Logo({ className }: { className?: string }) {
         </svg>
       </span>
       <span className="text-base font-bold tracking-tight text-foreground">
-        JobSearch OS
+        JobFit Scorecard
       </span>
     </Link>
   );

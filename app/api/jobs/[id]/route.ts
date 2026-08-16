@@ -33,7 +33,16 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ job });
+    const { data: evaluations, error: evaluationsError } = await supabase
+      .from("evaluations")
+      .select("*")
+      .eq("job_id", id)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (evaluationsError) throw evaluationsError;
+
+    return NextResponse.json({ job, evaluations: evaluations ?? [] });
   } catch (error: unknown | Error) {
     console.error("GET job error:", error);
     return NextResponse.json(

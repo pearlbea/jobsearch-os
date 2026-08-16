@@ -28,7 +28,7 @@ describe("RailShell", () => {
     );
 
     expect(
-      screen.getAllByRole("link", { name: "JobSearch OS" })[0],
+      screen.getAllByRole("link", { name: "JobFit Scorecard" })[0],
     ).toHaveAttribute("href", "/");
     expect(screen.getAllByRole("link", { name: "Evaluate" })[0]).toHaveAttribute(
       "href",

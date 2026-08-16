@@ -1,4 +1,4 @@
-# JobSearch OS
+# JobFit Scorecard
 
 A personal job-search assistant. Build a candidate profile once, then paste in
 job postings to get an instant, structured fit evaluation — a 0–100 match
@@ -49,8 +49,10 @@ Evaluations are saved to your account so you can revisit them later.
    ```
 
 2. In your Supabase project, create tables matching the shapes defined in
-   [`types/database.ts`](types/database.ts): `profiles`, `jobs`, and
-   `stories`. Enable email/password auth.
+   [`types/database.ts`](types/database.ts): `profiles`, `jobs`, `stories`,
+   and `evaluations` (one row per evaluation run against a job — `jobs`
+   keeps a denormalized snapshot of the latest one). Enable email/password
+   auth.
 
 3. Create a `.env.local` file in the project root:
 

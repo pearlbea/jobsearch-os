@@ -85,4 +85,72 @@ describe("EvaluationsList Component", () => {
 
     expect(results.violations).toEqual([]);
   });
+
+  it("does not render a re-evaluate button when onReevaluateJob isn't provided", () => {
+    render(<EvaluationsList {...defaultProps} />);
+
+    expect(
+      screen.queryByRole("button", { name: /re-evaluate/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("re-evaluates a job from its row without also selecting it", async () => {
+    const onReevaluateJob = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <EvaluationsList {...defaultProps} onReevaluateJob={onReevaluateJob} />,
+    );
+
+    const reevaluateButtons = screen.getAllByRole("button", {
+      name: /re-evaluate with current resume/i,
+    });
+    await user.click(reevaluateButtons[0]);
+
+    expect(onReevaluateJob).toHaveBeenCalledWith("job-1");
+    expect(onSelectJob).not.toHaveBeenCalled();
+  });
+
+  it("disables the re-evaluate button for the job currently being re-evaluated", () => {
+    render(
+      <EvaluationsList
+        {...defaultProps}
+        onReevaluateJob={vi.fn()}
+        reevaluatingJobId="job-2"
+      />,
+    );
+
+    const reevaluateButtons = screen.getAllByRole("button", {
+      name: /re-evaluate with current resume/i,
+    });
+    expect(reevaluateButtons[0]).toBeEnabled();
+    expect(reevaluateButtons[1]).toBeDisabled();
+  });
+
+  it("shows a tooltip describing the re-evaluate action on hover", async () => {
+    const user = userEvent.setup();
+    render(
+      <EvaluationsList {...defaultProps} onReevaluateJob={vi.fn()} />,
+    );
+
+    const [reevaluateButton] = screen.getAllByRole("button", {
+      name: /re-evaluate with current resume/i,
+    });
+    await user.hover(reevaluateButton);
+
+    expect(
+      await screen.findByRole("tooltip", {
+        name: /re-evaluate with current resume/i,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("has no detectable accessibility violations with the re-evaluate action enabled", async () => {
+    const { container } = render(
+      <EvaluationsList {...defaultProps} onReevaluateJob={vi.fn()} />,
+    );
+
+    const results = await axe.run(container);
+
+    expect(results.violations).toEqual([]);
+  });
 });
