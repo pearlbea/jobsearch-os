@@ -231,7 +231,7 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
           <div className="p-12 bg-card border border-border rounded-2xl text-center text-sm text-muted-foreground">
             {notFound
               ? "That evaluation couldn't be found."
-              : "Submit a job posting above to see your evaluation."}
+              : "Submit a job posting above to see your evaluation, or click on a saved evaluation to view the details."}
           </div>
         )}
       </div>
