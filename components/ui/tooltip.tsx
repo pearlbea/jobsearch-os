@@ -15,12 +15,13 @@ function TooltipProvider({
   );
 }
 
+// Doesn't wrap itself in a TooltipProvider — a single provider is mounted
+// once in app/layout.tsx so every tooltip in the tree shares one delay
+// group (adjacent tooltips reopen instantly instead of each waiting out
+// its own delay). Render <Tooltip> without an ancestor <TooltipProvider>
+// and this still works, just without that grouping.
 function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
-  return (
-    <TooltipProvider>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
-    </TooltipProvider>
-  );
+  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
 }
 
 function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
