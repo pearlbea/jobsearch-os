@@ -7,7 +7,7 @@ describe("Header", () => {
   it("renders the wordmark linking home and a sign-in control", () => {
     render(<Header />);
 
-    expect(screen.getByRole("link", { name: "JobSearch OS" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "JobFit Scorecard" })).toHaveAttribute(
       "href",
       "/",
     );

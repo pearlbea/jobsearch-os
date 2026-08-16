@@ -1,4 +1,4 @@
-# JobSearch OS
+# JobFit Scorecard
 
 A personal job-search assistant. Build a candidate profile once, then paste in
 job postings to get an instant, structured fit evaluation — a 0–100 match

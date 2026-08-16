@@ -24,7 +24,7 @@ export function RailShell({ userEmail, children }: RailShellProps) {
       <div className="sm:hidden sticky top-0 z-10 bg-background border-b border-border flex flex-col gap-2.5 px-4 py-3.5">
         <div className="flex items-center justify-between">
           <Link href="/" className="font-extrabold text-sm tracking-tight">
-            JobSearch OS
+            JobFit Scorecard
           </Link>
           <SignOutButton className="h-auto p-0 text-xs font-semibold text-foreground hover:bg-transparent hover:underline" />
         </div>
@@ -53,7 +53,7 @@ export function RailShell({ userEmail, children }: RailShellProps) {
       >
         <div className="flex flex-col gap-6">
           <Link href="/" className="font-extrabold text-[15px] tracking-tight px-1">
-            JobSearch OS
+            JobFit Scorecard
           </Link>
           <nav className="flex flex-col gap-0.5">
             {NAV_ITEMS.map((item) => {

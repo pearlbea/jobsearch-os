@@ -228,6 +228,10 @@ export function ProfileForm({
         <label className="block text-[13px] font-semibold text-[#5C564C] mb-1.5">
           Resume / Core Background
         </label>
+        <p className="text-xs text-muted-foreground mb-1.5">
+          Your name, email, phone number, and website are automatically
+          stripped out before this is sent to Claude for evaluation.
+        </p>
         <textarea
           rows={6}
           value={resumeText}

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText, Output } from "ai";
 import { compactEvaluationSchema } from "@/lib/schemas/evaluation";
+import { redactPii } from "@/lib/redact-pii";
 
 const MAX_EVALUATIONS_PER_USER = 5;
 
@@ -76,6 +77,11 @@ export async function POST(req: NextRequest) {
     // 4. Pre-process job description to drop non-essential footer text
     const cleanedDescription = cleanJobDescription(raw_description);
 
+    // Strip name/email/phone/website from the resume before it reaches the model
+    const redactedResume = profile.resume
+      ? redactPii(profile.resume, profile.full_name)
+      : profile.resume;
+
     // 5. Prompt framing
     const systemPrompt = `You are an dual-perspective talent evaluator: an ATS (Applicant Tracking System) parser AND an Executive Engineering Leader.
 
@@ -86,7 +92,7 @@ export async function POST(req: NextRequest) {
   CANDIDATE:
   - Target: ${profile.target_titles?.join(", ")} | Location: ${profile.location_preference}
   - Skills: ${profile.technical_skills?.join(", ")}
-  - Summary: ${profile.resume?.slice(0, 300)}
+  - Summary: ${redactedResume?.slice(0, 300)}
   - Key Projects: ${stories?.map((s) => `${s.title} (${s.competencies?.join(",")})`).join("; ")}
 
   RUBRIC:
