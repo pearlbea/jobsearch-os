@@ -72,7 +72,12 @@ describe("LoginPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("sends new sign-ups to the profile page once they confirm their email", async () => {
+  it("points the confirmation email at the bare /auth/callback URL", async () => {
+    // No query string here on purpose: Supabase validates emailRedirectTo
+    // against the project's redirect allow list including the query string,
+    // so an exact (non-wildcard) allow-list entry for /auth/callback would
+    // stop matching if we appended one. /auth/callback's own default
+    // destination is what sends new sign-ups to /profile instead.
     mockSearchParams = new URLSearchParams({ mode: "sign-up" });
     const user = userEvent.setup();
     render(<LoginPage />);
@@ -85,9 +90,7 @@ describe("LoginPage", () => {
       email: "new@example.com",
       password: "a-long-password-123",
       options: {
-        emailRedirectTo: expect.stringMatching(
-          /\/auth\/callback\?next=\/profile$/,
-        ),
+        emailRedirectTo: expect.stringMatching(/\/auth\/callback$/),
       },
     });
   });
