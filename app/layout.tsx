@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JobSearch OS",
+  title: "JobFit Scorecard",
   description:
     "Evaluate job postings against your profile and track your search.",
 };
