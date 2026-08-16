@@ -53,10 +53,10 @@ export async function runEvaluation({
   2. ATS KEYWORD SCAN (ats_analysis): Act like a strict, literal keyword filter (Workday/Taleo). Identify high-frequency technical tools, certifications, or domain terms explicitly present in the JOB POSTING that are missing verbatim from the RESUME.
 
   CANDIDATE:
-  - Target: ${profile.target_titles?.join(", ")} | Location: ${profile.location_preference}
-  - Skills: ${profile.technical_skills?.join(", ")}
-  - Summary: ${redactedResume?.slice(0, 300)}
-  - Key Projects: ${stories?.map((s) => `${s.title} (${s.competencies?.join(",")})`).join("; ")}
+  - Target: ${profile.target_titles?.join(", ") ?? ""} | Location: ${profile.location_preference ?? ""}
+  - Skills: ${profile.technical_skills?.join(", ") ?? ""}
+  - Summary: ${redactedResume?.slice(0, 300) ?? ""}
+  - Key Projects: ${stories?.map((s) => `${s.title} (${s.competencies?.join(",")})`).join("; ") ?? ""}
 
   RUBRIC:
   - 90-100: Exact match on skills, scope, and domain.

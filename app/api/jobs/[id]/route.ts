@@ -37,6 +37,7 @@ export async function GET(
       .from("evaluations")
       .select("*")
       .eq("job_id", id)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (evaluationsError) throw evaluationsError;
