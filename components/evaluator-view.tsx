@@ -208,11 +208,11 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
         )}
 
         {isLoading ? (
-          <div className="p-12 bg-card border border-border rounded-2xl text-center text-sm text-muted-foreground">
+          <div className="p-12 bg-card border border-border rounded-2xl text-center text-sm text-muted-foreground min-w-0">
             Loading evaluation report...
           </div>
         ) : activeJob && selectedEvaluation ? (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 min-w-0">
             {evaluationHistory.length > 1 && (
               <EvaluationHistory
                 evaluations={evaluationHistory}
@@ -228,7 +228,7 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
             />
           </div>
         ) : (
-          <div className="p-12 bg-card border border-border rounded-2xl text-center text-sm text-muted-foreground">
+          <div className="p-12 bg-card border border-border rounded-2xl text-center text-sm text-muted-foreground min-w-0">
             {notFound
               ? "That evaluation couldn't be found."
               : "Submit a job posting above to see your evaluation, or click on a saved evaluation to view the details."}

@@ -40,7 +40,7 @@ export function EvaluationCard({
   return (
     <div className="bg-card border border-border rounded-2xl p-8 shadow-[0_6px_20px_rgba(60,45,20,0.05)]">
       <div className="flex justify-between items-start gap-4 mb-6">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-2xl font-extrabold tracking-tight text-foreground mb-1">
             {job.role_title}
           </h2>
@@ -50,7 +50,7 @@ export function EvaluationCard({
           {job.job_url && /^https?:\/\//i.test(job.job_url) && (
             <div className="text-[15px] text-muted-foreground-strong mb-2">
               <Link
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className="text-sm text-muted-foreground hover:text-foreground break-all"
                 href={job.job_url}
                 prefetch={false}
                 rel="noopener noreferrer"
