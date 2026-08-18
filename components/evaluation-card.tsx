@@ -50,7 +50,7 @@ export function EvaluationCard({
           {job.job_url && /^https?:\/\//i.test(job.job_url) && (
             <div className="text-[15px] text-muted-foreground-strong mb-2">
               <Link
-                className="text-sm text-muted-foreground hover:text-foreground break-all"
+                className="text-sm text-muted-foreground hover:text-foreground text-nowrap truncate max-w-full inline-block"
                 href={job.job_url}
                 prefetch={false}
                 rel="noopener noreferrer"
