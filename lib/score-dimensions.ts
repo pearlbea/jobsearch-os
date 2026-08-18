@@ -33,9 +33,11 @@ export const SCORE_DIMENSIONS = {
 // number the model invents separately — this keeps the headline score
 // mechanically consistent with the breakdown shown to the user.
 export function computeMatchScore(breakdown: Record<keyof typeof SCORE_DIMENSIONS, number>): number {
-  const weightedSum = (Object.keys(SCORE_DIMENSIONS) as (keyof typeof SCORE_DIMENSIONS)[]).reduce(
+  const keys = Object.keys(SCORE_DIMENSIONS) as (keyof typeof SCORE_DIMENSIONS)[];
+  const totalWeight = keys.reduce((sum, key) => sum + SCORE_DIMENSIONS[key].weight, 0);
+  const weightedSum = keys.reduce(
     (sum, key) => sum + breakdown[key] * SCORE_DIMENSIONS[key].weight,
     0,
   );
-  return Math.round(weightedSum);
+  return Math.round(weightedSum / totalWeight);
 }
