@@ -2,7 +2,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { generateText, Output } from "ai";
 import { compactEvaluationSchema } from "@/lib/schemas/evaluation";
 import { redactPii } from "@/lib/redact-pii";
-import { SCORE_DIMENSIONS } from "@/lib/score-dimensions";
+import { computeMatchScore, SCORE_DIMENSIONS } from "@/lib/score-dimensions";
 import type { EvaluationSummary, Profile } from "@/types/database";
 
 // e.g. "breakdown.tech, breakdown.domain, breakdown.scope" — built from the
@@ -62,29 +62,30 @@ export async function runEvaluation({
   const systemPrompt = `You are an dual-perspective talent evaluator: an ATS (Applicant Tracking System) parser AND an Executive Engineering Leader.
 
   EVALUATION RULES:
-  1. SEMANTIC MATCH (Overall Score): Evaluate if the candidate's actual experience and capabilities match the role.
-  2. ATS KEYWORD SCAN (ats_analysis): Act like a strict, literal keyword filter (Workday/Taleo). Identify high-frequency technical tools, certifications, or domain terms explicitly present in the JOB POSTING that are missing verbatim from the RESUME.
-  3. SCORE BREAKDOWN: Score ${breakdownFieldList} independently of each other, as defined in their schema descriptions. The "scope" dimension in particular — ${SCORE_DIMENSIONS.scope.description} — should be evaluated as the Executive Engineering Leader persona, not as a proxy for technical skill.
+  1. ATS KEYWORD SCAN (ats_analysis): Act like a strict, literal keyword filter (Workday/Taleo). Identify high-frequency technical tools, certifications, or domain terms explicitly present in the JOB POSTING that are missing verbatim from the RESUME.
+  2. SCORE BREAKDOWN: Score ${breakdownFieldList} independently of each other, as defined in their schema descriptions. The "scope" dimension in particular — ${SCORE_DIMENSIONS.scope.description} — should be evaluated as the Executive Engineering Leader persona, not as a proxy for technical skill. There is no separate overall score to invent — the app computes it as a weighted average of these three dimensions, so each one must stand on its own as an accurate 0-100 read.
 
   CANDIDATE:
   - Resume: ${redactedResume}
   - Key Projects: ${keyProjects}
 
-  RUBRIC:
-  - 90-100: Exact match on skills, scope, and domain.
+  RUBRIC (apply to each of ${breakdownFieldList} independently):
+  - 90-100: Exact match on that dimension.
   - 75-89: Solid fit; missing minor nice-to-haves.
-  - 50-74: Partial fit; notable gaps in domain or core tech.
+  - 50-74: Partial fit; notable gaps.
   - <50: Poor alignment.
 
   Evaluate objectively and output structured JSON.
   `;
 
-  const { output: evalResult } = await generateText({
+  const { output } = await generateText({
     model: anthropic("claude-sonnet-5"),
     output: Output.object({ schema: compactEvaluationSchema }),
     system: systemPrompt,
     prompt: `JOB POSTING:\n${cleanedDescription}`,
   });
+
+  const evalResult = { ...output, score: computeMatchScore(output.breakdown) };
 
   // Map compact keys back to full database schema before saving. The field
   // names on both sides come from SCORE_DIMENSIONS (lib/score-dimensions.ts)

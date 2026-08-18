@@ -293,7 +293,6 @@ describe("POST /api/evaluate-job", () => {
       co: "Lyric",
       title: "Engineering Manager",
       remote: true,
-      score: 88,
       breakdown: {
         tech: 90,
         domain: 85,

@@ -260,7 +260,6 @@ describe("POST /api/jobs/[id]/evaluate", () => {
       co: "Lyric",
       title: "Engineering Manager",
       remote: true,
-      score: 93,
       breakdown: { tech: 95, domain: 90, scope: 92 },
       strengths: ["Updated resume highlights leadership scope"],
       gaps: [],
@@ -269,7 +268,7 @@ describe("POST /api/jobs/[id]/evaluate", () => {
     };
 
     const mockEvaluationSummary = {
-      match_score: 93,
+      match_score: 92,
       score_breakdown: {
         technical_match: 95,
         domain_match: 90,
@@ -289,14 +288,14 @@ describe("POST /api/jobs/[id]/evaluate", () => {
       id: "eval-2",
       job_id: "job-1",
       user_id: mockUser.id,
-      match_score: 93,
+      match_score: 92,
       evaluation_summary: mockEvaluationSummary,
       resume_snapshot: mockProfile.resume,
     };
 
     const mockUpdatedJob = {
       ...mockJob,
-      match_score: 93,
+      match_score: 92,
       evaluation_summary: mockEvaluationSummary,
     };
 
