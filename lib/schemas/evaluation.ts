@@ -6,7 +6,6 @@ export const compactEvaluationSchema = z.object({
   co: z.string().describe("Company name"),
   title: z.string().describe("Official job title"),
   remote: z.boolean().describe("Is fully remote"),
-  score: z.number().min(0).max(100).describe("0-100 match score"),
   breakdown: z.object({
     tech: z.number().min(0).max(100).describe(SCORE_DIMENSIONS.tech.description),
     domain: z
