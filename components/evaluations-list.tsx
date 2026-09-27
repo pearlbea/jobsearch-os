@@ -81,7 +81,7 @@ export function EvaluationsList({
                         size="icon-sm"
                         className="mr-2 shrink-0 text-muted-foreground"
                         disabled={isReevaluatingThis}
-                        aria-label="Re-evaluate with an updated resume"
+                        aria-label="Re-evaluate with updated resume"
                         onClick={(e) => {
                           e.stopPropagation();
                           onReevaluateJob(job.id);
@@ -97,7 +97,7 @@ export function EvaluationsList({
                     }
                   />
                   <TooltipContent>
-                    Re-evaluate with an updated resume
+                    Re-evaluate with updated resume
                   </TooltipContent>
                 </Tooltip>
               )}

@@ -116,7 +116,7 @@ describe("EvaluationCard Component", () => {
       />,
     );
     expect(
-      screen.getByRole("button", { name: /re-evaluate with current resume/i }),
+      screen.getByRole("button", { name: /re-evaluate with updated resume/i }),
     ).toBeEnabled();
 
     rerender(
