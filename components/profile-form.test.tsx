@@ -8,9 +8,11 @@ import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supaba
 
 // Mock Next.js router
 const mockRefresh = vi.fn();
+const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     refresh: mockRefresh,
+    push: mockPush,
   }),
 }));
 
@@ -78,6 +80,59 @@ describe("ProfileForm Component", () => {
         screen.getByText("Profile updated successfully!"),
       ).toBeInTheDocument();
       expect(mockRefresh).toHaveBeenCalledTimes(1);
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+  });
+
+  it("redirects to the evaluator with a welcome message when completing a profile with no resume yet", async () => {
+    // A profile row is auto-created on email confirmation, so by the time
+    // someone reaches this form a row already exists — it just has no
+    // resume yet, which is the real signal for "hasn't completed setup".
+    const user = userEvent.setup();
+    render(
+      <ProfileForm
+        {...defaultProps}
+        initialProfile={{
+          id: "user-123",
+          full_name: null,
+          email: "test@example.com",
+          resume: null,
+          created_at: "2026-08-01T00:00:00Z",
+          updated_at: "2026-08-01T00:00:00Z",
+        }}
+      />,
+    );
+
+    const nameInput = screen.getByPlaceholderText(/e\.g\. Jane Doe/i);
+    await user.type(nameInput, "Pearl Latteier");
+
+    const resumeInput = screen.getByPlaceholderText(/paste your resume here/i);
+    await user.type(resumeInput, "Experienced software leader.");
+
+    const submitButton = screen.getByRole("button", { name: /Save Profile/i });
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockSupabase.upsert).toHaveBeenCalled();
+      expect(mockPush).toHaveBeenCalledWith("/evaluator?welcome=1");
+      expect(mockRefresh).not.toHaveBeenCalled();
+    });
+  });
+
+  it("redirects to the evaluator with a welcome message when no profile row exists yet", async () => {
+    const user = userEvent.setup();
+    render(<ProfileForm {...defaultProps} initialProfile={null} />);
+
+    const nameInput = screen.getByPlaceholderText(/e\.g\. Jane Doe/i);
+    await user.type(nameInput, "Pearl Latteier");
+
+    const submitButton = screen.getByRole("button", { name: /Save Profile/i });
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockSupabase.upsert).toHaveBeenCalled();
+      expect(mockPush).toHaveBeenCalledWith("/evaluator?welcome=1");
+      expect(mockRefresh).not.toHaveBeenCalled();
     });
   });
 

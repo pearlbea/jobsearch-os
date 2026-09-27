@@ -177,7 +177,7 @@ export function EvaluationCard({
           >
             {isReevaluating
               ? "Re-evaluating..."
-              : "Re-evaluate with current resume"}
+              : "Re-evaluate with updated resume"}
           </Button>
         </div>
       )}

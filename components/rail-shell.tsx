@@ -12,6 +12,7 @@ interface RailShellProps {
 }
 
 const NAV_ITEMS: Array<{ label: string; href: string }> = [
+  { label: "Tracker", href: "/tracker" },
   { label: "Evaluate", href: "/evaluator" },
   { label: "Profile", href: "/profile" },
 ];
@@ -52,11 +53,12 @@ export function RailShell({ userEmail, children }: RailShellProps) {
       </div>
 
       {/* Desktop: sticky left rail */}
-      <div
-        className="hidden sm:flex sm:sticky sm:top-0 sm:self-start sm:h-screen w-[216px] shrink-0 border-r border-border flex-col justify-between px-4 py-5"
-      >
+      <div className="hidden sm:flex sm:sticky sm:top-0 sm:self-start sm:h-screen w-[216px] shrink-0 border-r border-border flex-col justify-between px-4 py-5">
         <div className="flex flex-col gap-6">
-          <Link href="/" className="font-extrabold text-[15px] tracking-tight px-1">
+          <Link
+            href="/"
+            className="font-extrabold text-[15px] tracking-tight px-1"
+          >
             JobFit Scorecard
           </Link>
           <nav className="flex flex-col gap-0.5">
@@ -88,7 +90,9 @@ export function RailShell({ userEmail, children }: RailShellProps) {
         </div>
         <div className="flex flex-col gap-2 px-1">
           <div className="flex items-center justify-between">
-            <span className="text-[12.5px] text-muted-foreground truncate">{userEmail}</span>
+            <span className="text-[12.5px] text-muted-foreground truncate">
+              {userEmail}
+            </span>
             <ThemeToggle className="-mr-1" />
           </div>
           <SignOutButton className="h-auto w-fit p-0 justify-start text-[12.5px] font-semibold text-foreground hover:bg-transparent hover:underline" />

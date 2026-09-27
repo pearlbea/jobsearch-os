@@ -23,6 +23,11 @@ export function ProfileForm({
   const [fullName, setFullName] = useState(initialProfile?.full_name || "");
   const [resumeText, setResumeText] = useState(initialProfile?.resume || "");
 
+  // A profile row is auto-created when the user confirms their email, so
+  // its existence doesn't mean they've completed it — an empty resume does,
+  // since that's what's required to run an evaluation.
+  const isFirstSave = !initialProfile?.resume?.trim();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -48,6 +53,11 @@ export function ProfileForm({
         .upsert(payload, { onConflict: "id" });
 
       if (error) throw error;
+
+      if (isFirstSave) {
+        router.push("/evaluator?welcome=1");
+        return;
+      }
 
       setMessage({ type: "success", text: "Profile updated successfully!" });
       router.refresh();

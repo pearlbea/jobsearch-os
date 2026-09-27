@@ -102,7 +102,7 @@ describe("EvaluationsList Component", () => {
     );
 
     const reevaluateButtons = screen.getAllByRole("button", {
-      name: /re-evaluate with current resume/i,
+      name: /re-evaluate with updated resume/i,
     });
     await user.click(reevaluateButtons[0]);
 
@@ -120,7 +120,7 @@ describe("EvaluationsList Component", () => {
     );
 
     const reevaluateButtons = screen.getAllByRole("button", {
-      name: /re-evaluate with current resume/i,
+      name: /re-evaluate with updated resume/i,
     });
     expect(reevaluateButtons[0]).toBeEnabled();
     expect(reevaluateButtons[1]).toBeDisabled();
@@ -128,18 +128,16 @@ describe("EvaluationsList Component", () => {
 
   it("shows a tooltip describing the re-evaluate action on hover", async () => {
     const user = userEvent.setup();
-    render(
-      <EvaluationsList {...defaultProps} onReevaluateJob={vi.fn()} />,
-    );
+    render(<EvaluationsList {...defaultProps} onReevaluateJob={vi.fn()} />);
 
     const [reevaluateButton] = screen.getAllByRole("button", {
-      name: /re-evaluate with current resume/i,
+      name: /re-evaluate with updated resume/i,
     });
     await user.hover(reevaluateButton);
 
     expect(
       await screen.findByRole("tooltip", {
-        name: /re-evaluate with current resume/i,
+        name: /re-evaluate with updated resume/i,
       }),
     ).toBeInTheDocument();
   });

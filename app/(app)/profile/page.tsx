@@ -1,19 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { requireUser } from "@/lib/supabase/auth";
 import { ProfileForm } from "@/components/profile-form";
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    redirect("/login");
-  }
-
+  const { supabase, user } = await requireUser();
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")

@@ -1,198 +1,103 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import axe from "axe-core";
+import { render, act } from "@testing-library/react";
 import { EvaluatorView } from "./evaluator-view";
-import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supabase-mock";
+import { EvaluatorViewContent } from "@/components/evaluator-view-content";
+import type { JobSummary } from "@/types/database";
 
-let mockSupabase: MockSupabaseClient;
 let searchParamValue: string | null = null;
-const mockPush = vi.fn();
-
-vi.mock("@/lib/supabase/client", () => ({
-  createClient: vi.fn(() => mockSupabase),
-}));
+let welcomeParamValue: string | null = null;
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
   useSearchParams: () => ({
-    get: (key: string) => (key === "job" ? searchParamValue : null),
+    get: (key: string) => {
+      if (key === "job") return searchParamValue;
+      if (key === "welcome") return welcomeParamValue;
+      return null;
+    },
   }),
 }));
 
-vi.mock("@/components/job-evaluator-form", () => ({
-  JobEvaluatorForm: () => <div data-testid="job-evaluator-form" />,
+vi.mock("@/components/evaluator-view-content", () => ({
+  EvaluatorViewContent: vi.fn(() => <div data-testid="evaluator-view-content" />),
 }));
 
-const mockEvaluationSummary = {
-  match_score: 82,
-  score_breakdown: { technical_match: 90, domain_match: 75, leadership_match: 80 },
-  key_strengths: ["Led a platform migration"],
-  potential_gaps: ["Limited regulated-industry experience"],
-  positioning_advice: "Emphasize your platform leadership track record.",
-  parsed_requirements: {
-    required_skills: ["TypeScript"],
-    preferred_skills: [],
-    is_remote: true,
+const mockJobSummaries: JobSummary[] = [
+  {
+    id: "job-1",
+    role_title: "Engineering Manager",
+    company_name: "Acme Corp",
+    match_score: 82,
+    created_at: "2026-08-01T00:00:00Z",
   },
-};
+];
 
-const mockJob = {
-  id: "job-1",
-  user_id: "user-1",
-  company_name: "Acme Corp",
-  role_title: "Engineering Manager",
-  location: "Remote",
-  job_url: null,
-  raw_description: "We are looking for a manager...",
-  status: "bookmarked",
-  match_score: 82,
-  evaluation_summary: mockEvaluationSummary,
-  created_at: "2026-08-01T00:00:00Z",
-  updated_at: null,
-};
-
-const mockEvaluation = {
-  id: "eval-1",
-  job_id: "job-1",
-  user_id: "user-1",
-  match_score: 82,
-  evaluation_summary: mockEvaluationSummary,
-  resume_snapshot: "Software engineer...",
-  created_at: "2026-08-01T00:00:00Z",
-};
+function lastContentProps() {
+  const calls = vi.mocked(EvaluatorViewContent).mock.calls;
+  return calls[calls.length - 1][0];
+}
 
 describe("EvaluatorView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     searchParamValue = null;
-    mockSupabase = createMockSupabaseClient();
+    welcomeParamValue = null;
   });
 
-  it("shows the empty state and hides the saved-evaluations sidebar when there are no saved evaluations", async () => {
-    mockSupabase.from.mockImplementation(() => ({
-      select: vi.fn().mockReturnThis(),
-      order: vi.fn().mockResolvedValue({ data: [], error: null }),
-    }));
+  it("passes a null jobId and no welcome when there are no search params", () => {
+    render(<EvaluatorView initialJobSummaries={[]} />);
 
-    render(<EvaluatorView />);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/submit a job posting above/i),
-      ).toBeInTheDocument();
+    expect(lastContentProps()).toMatchObject({
+      jobId: null,
+      showWelcome: false,
     });
-    expect(screen.queryByText(/saved evaluations/i)).not.toBeInTheDocument();
-    expect(mockSupabase.from).toHaveBeenCalledWith("jobs");
   });
 
-  it("loads the job referenced by the job search param via the API", async () => {
+  it("passes the job search param through as jobId", () => {
     searchParamValue = "job-1";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({ job: mockJob, evaluations: [mockEvaluation] }),
-        } as Response),
-      ),
-    );
 
-    render(<EvaluatorView />);
+    render(<EvaluatorView initialJobSummaries={[]} />);
 
-    await waitFor(() => {
-      expect(screen.getByText("Engineering Manager")).toBeInTheDocument();
-    });
-    expect(fetch).toHaveBeenCalledWith("/api/jobs/job-1");
+    expect(lastContentProps()).toMatchObject({ jobId: "job-1" });
   });
 
-  it("shows a not-found message when the requested job can't be loaded", async () => {
-    searchParamValue = "missing-job";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() =>
-        Promise.resolve({
-          ok: false,
-          json: () => Promise.resolve({ error: "Job evaluation not found" }),
-        } as Response),
-      ),
-    );
+  it("sets showWelcome when the welcome param is 1", () => {
+    welcomeParamValue = "1";
 
-    render(<EvaluatorView />);
+    render(<EvaluatorView initialJobSummaries={[]} />);
 
-    await waitFor(() => {
-      expect(screen.getByText(/couldn't be found/i)).toBeInTheDocument();
+    expect(lastContentProps()).toMatchObject({ showWelcome: true });
+  });
+
+  it("seeds the job summaries from initialJobSummaries", () => {
+    render(<EvaluatorView initialJobSummaries={mockJobSummaries} />);
+
+    expect(lastContentProps()).toMatchObject({
+      jobSummaries: mockJobSummaries,
     });
   });
 
-  it("shows saved evaluations in the sidebar and navigates when one is selected", async () => {
-    mockSupabase.from.mockImplementation(() => ({
-      select: vi.fn().mockReturnThis(),
-      order: vi.fn().mockResolvedValue({
-        data: [
-          {
-            id: "job-1",
-            role_title: "Engineering Manager",
-            company_name: "Acme Corp",
-            match_score: 85,
-            created_at: "2026-08-01T00:00:00Z",
-          },
-        ],
-        error: null,
-      }),
-    }));
-
-    const user = userEvent.setup();
-    render(<EvaluatorView />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Engineering Manager")).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByText("Engineering Manager"));
-
-    expect(mockPush).toHaveBeenCalledWith("/evaluator?job=job-1");
-  });
-
-  it("has no detectable accessibility violations", async () => {
-    searchParamValue = "job-1";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({ job: mockJob, evaluations: [mockEvaluation] }),
-        } as Response),
-      ),
+  it("keeps job summary updates when the selected job changes", () => {
+    const { rerender } = render(
+      <EvaluatorView initialJobSummaries={mockJobSummaries} />,
     );
-    mockSupabase.from.mockImplementation(() => ({
-      select: vi.fn().mockReturnThis(),
-      order: vi.fn().mockResolvedValue({
-        data: [
-          {
-            id: "job-1",
-            role_title: "Engineering Manager",
-            company_name: "Acme Corp",
-            match_score: 82,
-            created_at: "2026-08-01T00:00:00Z",
-          },
-        ],
-        error: null,
-      }),
-    }));
 
-    const { container } = render(<EvaluatorView />);
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("heading", { name: "Engineering Manager" }),
-      ).toBeInTheDocument();
+    const newSummary: JobSummary = {
+      id: "job-2",
+      role_title: "Staff Engineer",
+      company_name: "Globex",
+      match_score: 70,
+      created_at: "2026-09-01T00:00:00Z",
+    };
+    act(() => {
+      lastContentProps().setJobSummaries((prev) => [newSummary, ...prev]);
     });
 
-    const results = await axe.run(container);
+    searchParamValue = "job-2";
+    rerender(<EvaluatorView initialJobSummaries={mockJobSummaries} />);
 
-    expect(results.violations).toEqual([]);
+    expect(lastContentProps()).toMatchObject({
+      jobId: "job-2",
+      jobSummaries: [newSummary, ...mockJobSummaries],
+    });
   });
 });

@@ -4,7 +4,11 @@ import { RotateCw } from "lucide-react";
 import { JobSummary } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { getScoreBand } from "@/lib/score-band";
 
@@ -77,7 +81,7 @@ export function EvaluationsList({
                         size="icon-sm"
                         className="mr-2 shrink-0 text-muted-foreground"
                         disabled={isReevaluatingThis}
-                        aria-label="Re-evaluate with current resume"
+                        aria-label="Re-evaluate with updated resume"
                         onClick={(e) => {
                           e.stopPropagation();
                           onReevaluateJob(job.id);
@@ -92,7 +96,9 @@ export function EvaluationsList({
                       </Button>
                     }
                   />
-                  <TooltipContent>Re-evaluate with current resume</TooltipContent>
+                  <TooltipContent>
+                    Re-evaluate with updated resume
+                  </TooltipContent>
                 </Tooltip>
               )}
             </div>
