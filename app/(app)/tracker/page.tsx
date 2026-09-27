@@ -11,7 +11,9 @@ export default async function TrackerPage() {
 
   return (
     <div>
-      <h1>Job Tracker</h1>
+      <h1 className="text-[28px] font-extrabold tracking-tight text-foreground mb-1.5">
+        Job Tracker
+      </h1>
 
       {profile?.jobs?.map((job: Job) => (
         <div key={job.id}>
