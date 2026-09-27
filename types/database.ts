@@ -4,7 +4,29 @@ export type ApplicationStatus =
   | "applied"
   | "interviewing"
   | "offer"
+  | "rejected"
+  | "withdrawn"
   | "archived";
+
+export type WorkMode = "remote" | "hybrid" | "onsite";
+
+export type InteractionKind =
+  | "recruiter_screen"
+  | "hiring_manager"
+  | "technical"
+  | "panel"
+  | "take_home"
+  | "onsite"
+  | "offer_call"
+  | "email"
+  | "other";
+
+export type InteractionOutcome =
+  | "scheduled"
+  | "completed"
+  | "passed"
+  | "rejected"
+  | "cancelled";
 
 export interface Profile {
   id: string;
@@ -34,7 +56,18 @@ export interface Job {
   location: string | null;
   job_url: string | null;
   raw_description: string;
-  status: ApplicationStatus;
+  status: ApplicationStatus | null;
+  application_date: string | null; // ISO date (YYYY-MM-DD)
+  contact_person: string | null;
+  salary_range: string | null;
+  recruiter_initiated: boolean;
+  next_action: string | null;
+  next_action_date: string | null; // ISO date (YYYY-MM-DD)
+  source: string | null;
+  referral_name: string | null;
+  notes: string | null;
+  closed_reason: string | null;
+  work_mode: WorkMode | null;
   // Denormalized snapshot of the most recent row in `evaluations` for this
   // job, kept in sync on every insert/re-evaluation so list views don't need
   // to join. The full history lives in `evaluations`.
@@ -52,6 +85,22 @@ export interface Evaluation {
   evaluation_summary: EvaluationSummary;
   resume_snapshot: string | null;
   created_at: string;
+}
+
+// A conversation or interview stage for a job. `occurred_at` null means not
+// yet scheduled; a future timestamp means upcoming.
+export interface Interaction {
+  id: string;
+  job_id: string;
+  user_id: string;
+  kind: InteractionKind;
+  occurred_at: string | null;
+  interviewer_names: string[] | null;
+  outcome: InteractionOutcome | null;
+  notes: string | null;
+  story_ids: string[] | null;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export interface JobSummary {
@@ -112,6 +161,13 @@ export interface Database {
             "job_id" | "user_id" | "match_score" | "evaluation_summary"
           >;
         Update: Partial<Evaluation>;
+        Relationships: [];
+      };
+      interactions: {
+        Row: Interaction;
+        Insert: Partial<Interaction> &
+          Pick<Interaction, "job_id" | "user_id" | "kind">;
+        Update: Partial<Interaction>;
         Relationships: [];
       };
     };

@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/auth";
 import { RailShell } from "@/components/rail-shell";
 
 export default async function AppLayout({
@@ -7,15 +6,7 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    redirect("/login");
-  }
+  const { user } = await requireUser();
 
   return <RailShell userEmail={user.email ?? ""}>{children}</RailShell>;
 }

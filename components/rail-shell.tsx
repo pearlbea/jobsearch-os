@@ -12,7 +12,7 @@ interface RailShellProps {
 }
 
 const NAV_ITEMS: Array<{ label: string; href: string }> = [
-  { label: "Tracker", href: "/tracker" },
+  // { label: "Tracker", href: "/tracker" }, hide tracker; need user flow
   { label: "Evaluate", href: "/evaluator" },
   { label: "Profile", href: "/profile" },
 ];
