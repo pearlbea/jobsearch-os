@@ -31,13 +31,22 @@ function EvaluatorViewFallback() {
 function EvaluatorViewSearchParams() {
   const searchParams = useSearchParams();
   const jobId = searchParams.get("job");
+  const showWelcome = searchParams.get("welcome") === "1";
   // Keying on jobId gives each job a fresh component instance, so state
   // (isLoading, etc.) starts correctly initialized instead of needing an
   // Effect to reset it when the param changes.
-  return <EvaluatorViewContent key={jobId} jobId={jobId} />;
+  return (
+    <EvaluatorViewContent key={jobId} jobId={jobId} showWelcome={showWelcome} />
+  );
 }
 
-function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
+function EvaluatorViewContent({
+  jobId,
+  showWelcome,
+}: {
+  jobId: string | null;
+  showWelcome: boolean;
+}) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -75,6 +84,15 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!showWelcome) return;
+    const params = new URLSearchParams(window.location.search);
+    params.delete("welcome");
+    const query = params.toString();
+    router.replace(`/evaluator${query ? `?${query}` : ""}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -188,6 +206,13 @@ function EvaluatorViewContent({ jobId }: { jobId: string | null }) {
           Evaluate job postings against your resume.
         </p>
       </div>
+
+      {showWelcome && (
+        <div className="p-4 rounded-md text-sm font-medium bg-green-50 text-green-800">
+          You&apos;re all set! Paste in a job description below to get your
+          first evaluation.
+        </div>
+      )}
 
       <JobEvaluatorForm onEvaluationComplete={handleEvaluationComplete} />
 

@@ -7,16 +7,22 @@ import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supaba
 
 let mockSupabase: MockSupabaseClient;
 let searchParamValue: string | null = null;
+let welcomeParamValue: string | null = null;
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: vi.fn(() => mockSupabase),
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace, refresh: vi.fn() }),
   useSearchParams: () => ({
-    get: (key: string) => (key === "job" ? searchParamValue : null),
+    get: (key: string) => {
+      if (key === "job") return searchParamValue;
+      if (key === "welcome") return welcomeParamValue;
+      return null;
+    },
   }),
 }));
 
@@ -66,6 +72,7 @@ describe("EvaluatorView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     searchParamValue = null;
+    welcomeParamValue = null;
     mockSupabase = createMockSupabaseClient();
   });
 
@@ -153,6 +160,24 @@ describe("EvaluatorView", () => {
     await user.click(screen.getByText("Engineering Manager"));
 
     expect(mockPush).toHaveBeenCalledWith("/evaluator?job=job-1");
+  });
+
+  it("shows a welcome message when redirected from a first-time profile save and clears the param", async () => {
+    welcomeParamValue = "1";
+    mockSupabase.from.mockImplementation(() => ({
+      select: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({ data: [], error: null }),
+    }));
+
+    render(<EvaluatorView />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/you're all set! paste in a job description below/i),
+      ).toBeInTheDocument();
+    });
+
+    expect(mockReplace).toHaveBeenCalledWith("/evaluator", { scroll: false });
   });
 
   it("has no detectable accessibility violations", async () => {
