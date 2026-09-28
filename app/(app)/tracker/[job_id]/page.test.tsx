@@ -81,6 +81,43 @@ describe("JobPage", () => {
     expect(screen.getByText("Hiring Manager")).toBeInTheDocument();
   });
 
+  it("links back to the tracker list", async () => {
+    render(await JobPage(props()));
+
+    expect(
+      screen.getByRole("link", { name: "Back to Job Tracker" }),
+    ).toHaveAttribute("href", "/tracker");
+  });
+
+  it("offers to add a description and evaluate when the job hasn't been evaluated", async () => {
+    jobsQuery.single.mockResolvedValue({
+      data: { ...job, match_score: null, raw_description: null },
+      error: null,
+    });
+
+    render(await JobPage(props()));
+
+    expect(
+      screen.getByRole("heading", { name: "Evaluate This Job" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Job Description")).toHaveValue("");
+    expect(
+      screen.queryByRole("link", { name: "View full evaluation" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("links to the evaluation instead when the job has been evaluated", async () => {
+    render(await JobPage(props()));
+
+    expect(screen.getByText("Match score: 82%")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "View full evaluation" }),
+    ).toHaveAttribute("href", "/evaluator?job=job-1");
+    expect(
+      screen.queryByRole("heading", { name: "Evaluate This Job" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("scopes both queries to the requested job and the logged-in user", async () => {
     await JobPage(props());
 

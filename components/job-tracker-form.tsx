@@ -11,7 +11,7 @@ const STATUS_OPTIONS = labelOptions(STATUS_LABELS);
 const WORK_MODE_OPTIONS = labelOptions(WORK_MODE_LABELS);
 
 // Fields this form edits. match_score/evaluation_summary come from the
-// evaluator and raw_description drives it, so they aren't editable here.
+// evaluator, and raw_description is set by JobEvaluateForm when evaluating.
 type TrackerFields = Pick<
   Job,
   | "company_name"
