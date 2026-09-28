@@ -5,23 +5,10 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ApplicationStatus, Job, WorkMode } from "@/types/database";
 import { Button } from "@/components/ui/button";
+import { labelOptions, STATUS_LABELS, WORK_MODE_LABELS } from "@/lib/labels";
 
-const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
-  { value: "bookmarked", label: "Bookmarked" },
-  { value: "outreach_sent", label: "Outreach Sent" },
-  { value: "applied", label: "Applied" },
-  { value: "interviewing", label: "Interviewing" },
-  { value: "offer", label: "Offer" },
-  { value: "rejected", label: "Rejected" },
-  { value: "withdrawn", label: "Withdrawn" },
-  { value: "archived", label: "Archived" },
-];
-
-const WORK_MODE_OPTIONS: { value: WorkMode; label: string }[] = [
-  { value: "remote", label: "Remote" },
-  { value: "hybrid", label: "Hybrid" },
-  { value: "onsite", label: "Onsite" },
-];
+const STATUS_OPTIONS = labelOptions(STATUS_LABELS);
+const WORK_MODE_OPTIONS = labelOptions(WORK_MODE_LABELS);
 
 // Fields this form edits. match_score/evaluation_summary come from the
 // evaluator and raw_description drives it, so they aren't editable here.

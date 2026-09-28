@@ -8,26 +8,14 @@ import {
   InteractionOutcome,
 } from "@/types/database";
 import { Button } from "@/components/ui/button";
+import {
+  INTERACTION_KIND_LABELS,
+  INTERACTION_OUTCOME_LABELS,
+  labelOptions,
+} from "@/lib/labels";
 
-const KIND_LABELS: Record<InteractionKind, string> = {
-  recruiter_screen: "Recruiter Screen",
-  hiring_manager: "Hiring Manager",
-  technical: "Technical",
-  panel: "Panel",
-  take_home: "Take-Home",
-  onsite: "Onsite",
-  offer_call: "Offer Call",
-  email: "Email",
-  other: "Other",
-};
-
-const OUTCOME_LABELS: Record<InteractionOutcome, string> = {
-  scheduled: "Scheduled",
-  completed: "Completed",
-  passed: "Passed",
-  rejected: "Rejected",
-  cancelled: "Cancelled",
-};
+const KIND_OPTIONS = labelOptions(INTERACTION_KIND_LABELS);
+const OUTCOME_OPTIONS = labelOptions(INTERACTION_OUTCOME_LABELS);
 
 const NEW_FORM = "new";
 
@@ -157,9 +145,9 @@ function InteractionForm({
           Type
         </label>
         <select className={inputClass} {...field("kind")}>
-          {Object.entries(KIND_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
+          {KIND_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
             </option>
           ))}
         </select>
@@ -187,9 +175,9 @@ function InteractionForm({
         </label>
         <select className={inputClass} {...field("outcome")}>
           <option value="">Not set</option>
-          {Object.entries(OUTCOME_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
+          {OUTCOME_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
             </option>
           ))}
         </select>
@@ -337,7 +325,7 @@ export default function JobInteractions({
               <li key={interaction.id}>
                 <InteractionForm
                   idPrefix={`interaction-${interaction.id}`}
-                  ariaLabel={`Edit ${KIND_LABELS[interaction.kind]}`}
+                  ariaLabel={`Edit ${INTERACTION_KIND_LABELS[interaction.kind]}`}
                   initial={interaction}
                   submitLabel="Save"
                   onSave={(payload) => handleUpdate(interaction.id, payload)}
@@ -351,10 +339,10 @@ export default function JobInteractions({
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="font-bold text-foreground">
-                    {KIND_LABELS[interaction.kind]}
+                    {INTERACTION_KIND_LABELS[interaction.kind]}
                     {interaction.outcome && (
                       <span className="ml-2 text-xs font-semibold text-muted-foreground">
-                        {OUTCOME_LABELS[interaction.outcome]}
+                        {INTERACTION_OUTCOME_LABELS[interaction.outcome]}
                       </span>
                     )}
                   </h3>
