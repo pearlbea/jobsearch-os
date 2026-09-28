@@ -131,13 +131,36 @@ describe("JobPage", () => {
   it("404s when the job doesn't exist or belongs to another user", async () => {
     jobsQuery.single.mockResolvedValue({
       data: null,
-      error: { message: "No rows" },
+      error: { code: "PGRST116", message: "no rows found" },
     });
 
     await expect(JobPage(props("someone-elses-job"))).rejects.toThrow(
       "NEXT_NOT_FOUND",
     );
     expect(notFound).toHaveBeenCalled();
+  });
+
+  it("404s when the job id isn't a valid UUID", async () => {
+    jobsQuery.single.mockResolvedValue({
+      data: null,
+      error: { code: "22P02", message: "invalid input syntax for type uuid" },
+    });
+
+    await expect(JobPage(props("not-a-uuid"))).rejects.toThrow(
+      "NEXT_NOT_FOUND",
+    );
+  });
+
+  it("throws, rather than 404ing, when loading the job fails", async () => {
+    const failure = Object.assign(new Error("column jobs.work_mode does not exist"), {
+      code: "42703",
+    });
+    jobsQuery.single.mockResolvedValue({ data: null, error: failure });
+
+    await expect(JobPage(props())).rejects.toThrow(
+      "column jobs.work_mode does not exist",
+    );
+    expect(notFound).not.toHaveBeenCalled();
   });
 
   it("throws when loading interactions fails", async () => {
