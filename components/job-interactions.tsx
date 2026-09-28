@@ -8,26 +8,16 @@ import {
   InteractionOutcome,
 } from "@/types/database";
 import { Button } from "@/components/ui/button";
+import {
+  INTERACTION_KIND_LABELS,
+  INTERACTION_OUTCOME_LABELS,
+  labelOptions,
+} from "@/lib/labels";
 
-const KIND_LABELS: Record<InteractionKind, string> = {
-  recruiter_screen: "Recruiter Screen",
-  hiring_manager: "Hiring Manager",
-  technical: "Technical",
-  panel: "Panel",
-  take_home: "Take-Home",
-  onsite: "Onsite",
-  offer_call: "Offer Call",
-  email: "Email",
-  other: "Other",
-};
+const KIND_OPTIONS = labelOptions(INTERACTION_KIND_LABELS);
+const OUTCOME_OPTIONS = labelOptions(INTERACTION_OUTCOME_LABELS);
 
-const OUTCOME_LABELS: Record<InteractionOutcome, string> = {
-  scheduled: "Scheduled",
-  completed: "Completed",
-  passed: "Passed",
-  rejected: "Rejected",
-  cancelled: "Cancelled",
-};
+const NEW_FORM = "new";
 
 const labelClass =
   "block text-[13px] font-semibold text-muted-foreground-strong mb-1.5";
@@ -92,12 +82,14 @@ function toPayload(values: InteractionFormValues): Partial<Interaction> {
 
 function InteractionForm({
   idPrefix,
+  ariaLabel,
   initial,
   submitLabel,
   onSave,
   onCancel,
 }: {
   idPrefix: string;
+  ariaLabel: string;
   initial?: Interaction;
   submitLabel: string;
   onSave: (payload: Partial<Interaction>) => Promise<void>;
@@ -130,6 +122,7 @@ function InteractionForm({
     } catch (err: unknown) {
       console.error("Interaction save error:", err);
       setError(err instanceof Error ? err.message : "Failed to save.");
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -137,6 +130,7 @@ function InteractionForm({
   return (
     <form
       onSubmit={handleSubmit}
+      aria-label={ariaLabel}
       className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border border-border rounded-xl"
     >
       {error && (
@@ -152,9 +146,9 @@ function InteractionForm({
           Type
         </label>
         <select className={inputClass} {...field("kind")}>
-          {Object.entries(KIND_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
+          {KIND_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
             </option>
           ))}
         </select>
@@ -182,9 +176,9 @@ function InteractionForm({
         </label>
         <select className={inputClass} {...field("outcome")}>
           <option value="">Not set</option>
-          {Object.entries(OUTCOME_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
+          {OUTCOME_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
             </option>
           ))}
         </select>
@@ -225,8 +219,19 @@ export default function JobInteractions({
   const [interactions, setInteractions] = useState(() =>
     sortInteractions(initialInteractions),
   );
-  // "new" = the add form is open; an id = that interaction is being edited.
-  const [editing, setEditing] = useState<string | null>(null);
+  // Keys of the forms currently open: NEW_FORM for the add form, otherwise
+  // the id of an interaction being edited. Several can be open at once so
+  // opening one form never discards unsaved input in another.
+  const [openForms, setOpenForms] = useState<ReadonlySet<string>>(new Set());
+  const isOpen = (key: string) => openForms.has(key);
+  const openForm = (key: string) =>
+    setOpenForms((prev) => new Set(prev).add(key));
+  const closeForm = (key: string) =>
+    setOpenForms((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleCreate = async (payload: Partial<Interaction>) => {
@@ -237,7 +242,7 @@ export default function JobInteractions({
       .single();
     if (error) throw error;
     setInteractions((prev) => sortInteractions([...prev, data]));
-    setEditing(null);
+    closeForm(NEW_FORM);
   };
 
   const handleUpdate = async (id: string, payload: Partial<Interaction>) => {
@@ -253,7 +258,7 @@ export default function JobInteractions({
     setInteractions((prev) =>
       sortInteractions(prev.map((i) => (i.id === id ? data : i))),
     );
-    setEditing(null);
+    closeForm(id);
   };
 
   const handleDelete = async (id: string) => {
@@ -284,8 +289,8 @@ export default function JobInteractions({
         >
           Conversations &amp; Interviews
         </h2>
-        {editing !== "new" && (
-          <Button type="button" onClick={() => setEditing("new")}>
+        {!isOpen(NEW_FORM) && (
+          <Button type="button" onClick={() => openForm(NEW_FORM)}>
             Add Interaction
           </Button>
         )}
@@ -300,30 +305,32 @@ export default function JobInteractions({
         </div>
       )}
 
-      {editing === "new" && (
+      {isOpen(NEW_FORM) && (
         <InteractionForm
           idPrefix="new-interaction"
+          ariaLabel="Add interaction"
           submitLabel="Add"
           onSave={handleCreate}
-          onCancel={() => setEditing(null)}
+          onCancel={() => closeForm(NEW_FORM)}
         />
       )}
 
-      {interactions.length === 0 && editing !== "new" ? (
+      {interactions.length === 0 && !isOpen(NEW_FORM) ? (
         <p className="text-sm text-muted-foreground">
           No conversations or interviews yet.
         </p>
       ) : (
         <ul className="space-y-3">
           {interactions.map((interaction) =>
-            editing === interaction.id ? (
+            isOpen(interaction.id) ? (
               <li key={interaction.id}>
                 <InteractionForm
                   idPrefix={`interaction-${interaction.id}`}
+                  ariaLabel={`Edit ${INTERACTION_KIND_LABELS[interaction.kind]}`}
                   initial={interaction}
                   submitLabel="Save"
                   onSave={(payload) => handleUpdate(interaction.id, payload)}
-                  onCancel={() => setEditing(null)}
+                  onCancel={() => closeForm(interaction.id)}
                 />
               </li>
             ) : (
@@ -333,10 +340,10 @@ export default function JobInteractions({
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="font-bold text-foreground">
-                    {KIND_LABELS[interaction.kind]}
+                    {INTERACTION_KIND_LABELS[interaction.kind]}
                     {interaction.outcome && (
                       <span className="ml-2 text-xs font-semibold text-muted-foreground">
-                        {OUTCOME_LABELS[interaction.outcome]}
+                        {INTERACTION_OUTCOME_LABELS[interaction.outcome]}
                       </span>
                     )}
                   </h3>
@@ -361,7 +368,7 @@ export default function JobInteractions({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setEditing(interaction.id)}
+                    onClick={() => openForm(interaction.id)}
                   >
                     Edit
                   </Button>

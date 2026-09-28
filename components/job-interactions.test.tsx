@@ -6,24 +6,20 @@ import JobInteractions from "./job-interactions";
 import { createClient } from "@/lib/supabase/client";
 import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supabase-mock";
 import { Interaction } from "@/types/database";
+import { makeInteraction } from "@/test/fixtures";
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: vi.fn(),
 }));
 
-const baseInteraction: Interaction = {
-  id: "int-1",
-  job_id: "job-1",
+const baseInteraction = makeInteraction({
   user_id: "user-123",
-  kind: "recruiter_screen",
   occurred_at: "2026-09-10T15:00:00Z",
   interviewer_names: ["Dana"],
   outcome: "passed",
   notes: "Went well.",
-  story_ids: null,
   created_at: "2026-09-01T00:00:00Z",
-  updated_at: null,
-};
+});
 
 const props = {
   jobId: "job-1",
@@ -145,8 +141,122 @@ describe("JobInteractions", () => {
     expect(screen.getByRole("button", { name: "Add" })).toBeEnabled();
   });
 
+  it("keeps a newly opened add form open when an earlier edit finishes saving", async () => {
+    let resolveSave!: (value: unknown) => void;
+    mockSupabase.single.mockReturnValue(
+      new Promise((resolve) => (resolveSave = resolve)),
+    );
+    const user = userEvent.setup();
+    render(<JobInteractions {...props} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    // While the edit is still saving, start adding a new interaction.
+    await user.click(screen.getByRole("button", { name: "Add Interaction" }));
+    const addForm = screen.getByRole("form", { name: "Add interaction" });
+    await user.type(within(addForm).getByLabelText("With"), "Sam");
+
+    resolveSave({ data: { ...baseInteraction, outcome: "rejected" }, error: null });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { level: 3, name: "Recruiter ScreenRejected" }),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole("form", { name: "Edit Recruiter Screen" }),
+    ).not.toBeInTheDocument();
+    expect(within(addForm).getByLabelText("With")).toHaveValue("Sam");
+  });
+
+  it("keeps a newly opened edit form open when an earlier add finishes saving", async () => {
+    let resolveSave!: (value: unknown) => void;
+    mockSupabase.single.mockReturnValue(
+      new Promise((resolve) => (resolveSave = resolve)),
+    );
+    const user = userEvent.setup();
+    render(<JobInteractions {...props} />);
+
+    await user.click(screen.getByRole("button", { name: "Add Interaction" }));
+    const addForm = screen.getByRole("form", { name: "Add interaction" });
+    await user.selectOptions(within(addForm).getByLabelText("Type"), "technical");
+    await user.click(within(addForm).getByRole("button", { name: "Add" }));
+    // While the add is still saving, start editing the existing interaction.
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const editForm = screen.getByRole("form", { name: "Edit Recruiter Screen" });
+    await user.type(within(editForm).getByLabelText("Notes"), " Follow-up sent.");
+
+    resolveSave({
+      data: { ...baseInteraction, id: "int-new", kind: "technical" },
+      error: null,
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { level: 3, name: /^Technical/ }),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole("form", { name: "Add interaction" }),
+    ).not.toBeInTheDocument();
+    expect(within(editForm).getByLabelText("Notes")).toHaveValue(
+      "Went well. Follow-up sent.",
+    );
+  });
+
+  it("keeps unsaved input in the add form when an edit form is opened", async () => {
+    const user = userEvent.setup();
+    render(<JobInteractions {...props} />);
+
+    await user.click(screen.getByRole("button", { name: "Add Interaction" }));
+    const addForm = screen.getByRole("form", { name: "Add interaction" });
+    await user.type(within(addForm).getByLabelText("With"), "Sam");
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+
+    expect(
+      screen.getByRole("form", { name: "Edit Recruiter Screen" }),
+    ).toBeInTheDocument();
+    expect(within(addForm).getByLabelText("With")).toHaveValue("Sam");
+  });
+
+  it("keeps unsaved input in one edit form when another is opened, and cancels them independently", async () => {
+    const user = userEvent.setup();
+    render(
+      <JobInteractions
+        {...props}
+        initialInteractions={[
+          baseInteraction,
+          { ...baseInteraction, id: "int-2", kind: "technical", occurred_at: "2026-09-20T15:00:00Z" },
+        ]}
+      />,
+    );
+
+    const screenItem = screen.getByRole("heading", { level: 3, name: /^Recruiter Screen/ }).closest("li")!;
+    await user.click(within(screenItem).getByRole("button", { name: "Edit" }));
+    const screenForm = screen.getByRole("form", { name: "Edit Recruiter Screen" });
+    await user.type(within(screenForm).getByLabelText("Notes"), " More.");
+
+    const technicalItem = screen.getByRole("heading", { level: 3, name: /^Technical/ }).closest("li")!;
+    await user.click(within(technicalItem).getByRole("button", { name: "Edit" }));
+    const technicalForm = screen.getByRole("form", { name: "Edit Technical" });
+
+    expect(within(screenForm).getByLabelText("Notes")).toHaveValue("Went well. More.");
+
+    await user.click(within(technicalForm).getByRole("button", { name: "Cancel" }));
+
+    expect(technicalForm).not.toBeInTheDocument();
+    expect(within(screenForm).getByLabelText("Notes")).toHaveValue("Went well. More.");
+  });
+
+  // Delete ends in .eq("id").eq("user_id"), so the second eq resolves the query.
+  const mockDeleteResult = (result: { error: unknown }) =>
+    mockSupabase.eq
+      .mockReturnValueOnce(mockSupabase)
+      .mockResolvedValueOnce({ data: null, ...result });
+
   it("deletes an interaction after confirming", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
+    mockDeleteResult({ error: null });
     const user = userEvent.setup();
     render(<JobInteractions {...props} />);
 
@@ -158,8 +268,24 @@ describe("JobInteractions", () => {
         screen.getByText("No conversations or interviews yet."),
       ).toBeInTheDocument();
     });
+    expect(mockSupabase.from).toHaveBeenCalledWith("interactions");
     expect(mockSupabase.delete).toHaveBeenCalled();
-    expect(mockSupabase.eq).toHaveBeenCalledWith("id", "int-1");
+    expect(mockSupabase.eq).toHaveBeenNthCalledWith(1, "id", "int-1");
+    expect(mockSupabase.eq).toHaveBeenNthCalledWith(2, "user_id", "user-123");
+  });
+
+  it("keeps the interaction and shows an error when the delete fails", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    mockDeleteResult({ error: { message: "permission denied" } });
+    const user = userEvent.setup();
+    render(<JobInteractions {...props} />);
+
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "permission denied",
+    );
+    expect(screen.getByText("Recruiter Screen")).toBeInTheDocument();
   });
 
   it("does not delete when the confirm is dismissed", async () => {
