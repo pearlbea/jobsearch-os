@@ -122,6 +122,7 @@ function InteractionForm({
     } catch (err: unknown) {
       console.error("Interaction save error:", err);
       setError(err instanceof Error ? err.message : "Failed to save.");
+    } finally {
       setIsSubmitting(false);
     }
   };
