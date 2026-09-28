@@ -248,8 +248,15 @@ describe("JobInteractions", () => {
     expect(within(screenForm).getByLabelText("Notes")).toHaveValue("Went well. More.");
   });
 
+  // Delete ends in .eq("id").eq("user_id"), so the second eq resolves the query.
+  const mockDeleteResult = (result: { error: unknown }) =>
+    mockSupabase.eq
+      .mockReturnValueOnce(mockSupabase)
+      .mockResolvedValueOnce({ data: null, ...result });
+
   it("deletes an interaction after confirming", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
+    mockDeleteResult({ error: null });
     const user = userEvent.setup();
     render(<JobInteractions {...props} />);
 
@@ -261,8 +268,24 @@ describe("JobInteractions", () => {
         screen.getByText("No conversations or interviews yet."),
       ).toBeInTheDocument();
     });
+    expect(mockSupabase.from).toHaveBeenCalledWith("interactions");
     expect(mockSupabase.delete).toHaveBeenCalled();
-    expect(mockSupabase.eq).toHaveBeenCalledWith("id", "int-1");
+    expect(mockSupabase.eq).toHaveBeenNthCalledWith(1, "id", "int-1");
+    expect(mockSupabase.eq).toHaveBeenNthCalledWith(2, "user_id", "user-123");
+  });
+
+  it("keeps the interaction and shows an error when the delete fails", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    mockDeleteResult({ error: { message: "permission denied" } });
+    const user = userEvent.setup();
+    render(<JobInteractions {...props} />);
+
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "permission denied",
+    );
+    expect(screen.getByText("Recruiter Screen")).toBeInTheDocument();
   });
 
   it("does not delete when the confirm is dismissed", async () => {
