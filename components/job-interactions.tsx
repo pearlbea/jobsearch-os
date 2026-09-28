@@ -29,6 +29,8 @@ const OUTCOME_LABELS: Record<InteractionOutcome, string> = {
   cancelled: "Cancelled",
 };
 
+const NEW_FORM = "new";
+
 const labelClass =
   "block text-[13px] font-semibold text-muted-foreground-strong mb-1.5";
 const inputClass =
@@ -92,12 +94,14 @@ function toPayload(values: InteractionFormValues): Partial<Interaction> {
 
 function InteractionForm({
   idPrefix,
+  ariaLabel,
   initial,
   submitLabel,
   onSave,
   onCancel,
 }: {
   idPrefix: string;
+  ariaLabel: string;
   initial?: Interaction;
   submitLabel: string;
   onSave: (payload: Partial<Interaction>) => Promise<void>;
@@ -137,6 +141,7 @@ function InteractionForm({
   return (
     <form
       onSubmit={handleSubmit}
+      aria-label={ariaLabel}
       className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border border-border rounded-xl"
     >
       {error && (
@@ -225,8 +230,19 @@ export default function JobInteractions({
   const [interactions, setInteractions] = useState(() =>
     sortInteractions(initialInteractions),
   );
-  // "new" = the add form is open; an id = that interaction is being edited.
-  const [editing, setEditing] = useState<string | null>(null);
+  // Keys of the forms currently open: NEW_FORM for the add form, otherwise
+  // the id of an interaction being edited. Several can be open at once so
+  // opening one form never discards unsaved input in another.
+  const [openForms, setOpenForms] = useState<ReadonlySet<string>>(new Set());
+  const isOpen = (key: string) => openForms.has(key);
+  const openForm = (key: string) =>
+    setOpenForms((prev) => new Set(prev).add(key));
+  const closeForm = (key: string) =>
+    setOpenForms((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleCreate = async (payload: Partial<Interaction>) => {
@@ -237,9 +253,7 @@ export default function JobInteractions({
       .single();
     if (error) throw error;
     setInteractions((prev) => sortInteractions([...prev, data]));
-    // Only close the add form. The user may have opened another form while
-    // this save was in flight, and closing that would discard their input.
-    setEditing((current) => (current === "new" ? null : current));
+    closeForm(NEW_FORM);
   };
 
   const handleUpdate = async (id: string, payload: Partial<Interaction>) => {
@@ -255,7 +269,7 @@ export default function JobInteractions({
     setInteractions((prev) =>
       sortInteractions(prev.map((i) => (i.id === id ? data : i))),
     );
-    setEditing((current) => (current === id ? null : current));
+    closeForm(id);
   };
 
   const handleDelete = async (id: string) => {
@@ -286,8 +300,8 @@ export default function JobInteractions({
         >
           Conversations &amp; Interviews
         </h2>
-        {editing !== "new" && (
-          <Button type="button" onClick={() => setEditing("new")}>
+        {!isOpen(NEW_FORM) && (
+          <Button type="button" onClick={() => openForm(NEW_FORM)}>
             Add Interaction
           </Button>
         )}
@@ -302,30 +316,32 @@ export default function JobInteractions({
         </div>
       )}
 
-      {editing === "new" && (
+      {isOpen(NEW_FORM) && (
         <InteractionForm
           idPrefix="new-interaction"
+          ariaLabel="Add interaction"
           submitLabel="Add"
           onSave={handleCreate}
-          onCancel={() => setEditing(null)}
+          onCancel={() => closeForm(NEW_FORM)}
         />
       )}
 
-      {interactions.length === 0 && editing !== "new" ? (
+      {interactions.length === 0 && !isOpen(NEW_FORM) ? (
         <p className="text-sm text-muted-foreground">
           No conversations or interviews yet.
         </p>
       ) : (
         <ul className="space-y-3">
           {interactions.map((interaction) =>
-            editing === interaction.id ? (
+            isOpen(interaction.id) ? (
               <li key={interaction.id}>
                 <InteractionForm
                   idPrefix={`interaction-${interaction.id}`}
+                  ariaLabel={`Edit ${KIND_LABELS[interaction.kind]}`}
                   initial={interaction}
                   submitLabel="Save"
                   onSave={(payload) => handleUpdate(interaction.id, payload)}
-                  onCancel={() => setEditing(null)}
+                  onCancel={() => closeForm(interaction.id)}
                 />
               </li>
             ) : (
@@ -363,7 +379,7 @@ export default function JobInteractions({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setEditing(interaction.id)}
+                    onClick={() => openForm(interaction.id)}
                   >
                     Edit
                   </Button>

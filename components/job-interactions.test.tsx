@@ -157,15 +157,20 @@ describe("JobInteractions", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
     // While the edit is still saving, start adding a new interaction.
     await user.click(screen.getByRole("button", { name: "Add Interaction" }));
-    await user.type(screen.getByLabelText("With"), "Sam");
+    const addForm = screen.getByRole("form", { name: "Add interaction" });
+    await user.type(within(addForm).getByLabelText("With"), "Sam");
 
     resolveSave({ data: { ...baseInteraction, outcome: "rejected" }, error: null });
 
     await waitFor(() => {
-      expect(screen.getByText("Rejected")).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { level: 3, name: "Recruiter ScreenRejected" }),
+      ).toBeInTheDocument();
     });
-    expect(screen.getByLabelText("With")).toHaveValue("Sam");
-    expect(screen.getByRole("button", { name: "Add" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("form", { name: "Edit Recruiter Screen" }),
+    ).not.toBeInTheDocument();
+    expect(within(addForm).getByLabelText("With")).toHaveValue("Sam");
   });
 
   it("keeps a newly opened edit form open when an earlier add finishes saving", async () => {
@@ -177,11 +182,13 @@ describe("JobInteractions", () => {
     render(<JobInteractions {...props} />);
 
     await user.click(screen.getByRole("button", { name: "Add Interaction" }));
-    await user.selectOptions(screen.getByLabelText("Type"), "technical");
-    await user.click(screen.getByRole("button", { name: "Add" }));
+    const addForm = screen.getByRole("form", { name: "Add interaction" });
+    await user.selectOptions(within(addForm).getByLabelText("Type"), "technical");
+    await user.click(within(addForm).getByRole("button", { name: "Add" }));
     // While the add is still saving, start editing the existing interaction.
     await user.click(screen.getByRole("button", { name: "Edit" }));
-    await user.type(screen.getByLabelText("Notes"), " Follow-up sent.");
+    const editForm = screen.getByRole("form", { name: "Edit Recruiter Screen" });
+    await user.type(within(editForm).getByLabelText("Notes"), " Follow-up sent.");
 
     resolveSave({
       data: { ...baseInteraction, id: "int-new", kind: "technical" },
@@ -189,11 +196,60 @@ describe("JobInteractions", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("Technical")).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { level: 3, name: /^Technical/ }),
+      ).toBeInTheDocument();
     });
-    expect(screen.getByLabelText("Notes")).toHaveValue(
+    expect(
+      screen.queryByRole("form", { name: "Add interaction" }),
+    ).not.toBeInTheDocument();
+    expect(within(editForm).getByLabelText("Notes")).toHaveValue(
       "Went well. Follow-up sent.",
     );
+  });
+
+  it("keeps unsaved input in the add form when an edit form is opened", async () => {
+    const user = userEvent.setup();
+    render(<JobInteractions {...props} />);
+
+    await user.click(screen.getByRole("button", { name: "Add Interaction" }));
+    const addForm = screen.getByRole("form", { name: "Add interaction" });
+    await user.type(within(addForm).getByLabelText("With"), "Sam");
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+
+    expect(
+      screen.getByRole("form", { name: "Edit Recruiter Screen" }),
+    ).toBeInTheDocument();
+    expect(within(addForm).getByLabelText("With")).toHaveValue("Sam");
+  });
+
+  it("keeps unsaved input in one edit form when another is opened, and cancels them independently", async () => {
+    const user = userEvent.setup();
+    render(
+      <JobInteractions
+        {...props}
+        initialInteractions={[
+          baseInteraction,
+          { ...baseInteraction, id: "int-2", kind: "technical", occurred_at: "2026-09-20T15:00:00Z" },
+        ]}
+      />,
+    );
+
+    const screenItem = screen.getByRole("heading", { level: 3, name: /^Recruiter Screen/ }).closest("li")!;
+    await user.click(within(screenItem).getByRole("button", { name: "Edit" }));
+    const screenForm = screen.getByRole("form", { name: "Edit Recruiter Screen" });
+    await user.type(within(screenForm).getByLabelText("Notes"), " More.");
+
+    const technicalItem = screen.getByRole("heading", { level: 3, name: /^Technical/ }).closest("li")!;
+    await user.click(within(technicalItem).getByRole("button", { name: "Edit" }));
+    const technicalForm = screen.getByRole("form", { name: "Edit Technical" });
+
+    expect(within(screenForm).getByLabelText("Notes")).toHaveValue("Went well. More.");
+
+    await user.click(within(technicalForm).getByRole("button", { name: "Cancel" }));
+
+    expect(technicalForm).not.toBeInTheDocument();
+    expect(within(screenForm).getByLabelText("Notes")).toHaveValue("Went well. More.");
   });
 
   it("deletes an interaction after confirming", async () => {
