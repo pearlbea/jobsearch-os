@@ -80,6 +80,9 @@ describe("EvaluatorPage Server Component", () => {
     render(await EvaluatorPage());
 
     expect(mockSupabase.from).toHaveBeenCalledWith("jobs");
+    expect(mockSupabase.eq).toHaveBeenCalledWith("user_id", "user-123");
+    // Tracker-only jobs (never evaluated) stay out of the evaluation history.
+    expect(mockSupabase.not).toHaveBeenCalledWith("match_score", "is", null);
     expect(vi.mocked(EvaluatorView).mock.calls[0][0]).toEqual({
       initialJobSummaries: jobSummaries,
     });
