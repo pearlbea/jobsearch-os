@@ -96,6 +96,37 @@ describe("POST /api/jobs/[id]/evaluate", () => {
     expect(json).toEqual({ error: "Job not found" });
   });
 
+  it.each([null, "   "])(
+    "should return 400 without spending anything if the job has no description (%j)",
+    async (raw_description) => {
+      mockSupabase.auth.getUser.mockResolvedValue({
+        data: { user: { id: "user-123" } },
+        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === "jobs") {
+          return createMockQueryBuilder({
+            single: vi.fn().mockResolvedValue({
+              data: { id: "job-1", user_id: "user-123", raw_description },
+              error: null,
+            }),
+          });
+        }
+        throw new Error(`Unexpected query on ${table}`);
+      });
+
+      const res = await POST(makeRequest(), makeProps());
+      const json = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(json).toEqual({
+        error: "Add a job description before evaluating this job.",
+      });
+      expect(generateText).not.toHaveBeenCalled();
+    },
+  );
+
   it("should return 400 if the job's posting text is entirely boilerplate", async () => {
     const mockUser = { id: "user-123" };
     const mockJob = {

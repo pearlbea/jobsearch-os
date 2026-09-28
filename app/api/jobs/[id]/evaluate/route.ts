@@ -36,6 +36,14 @@ export async function POST(
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
+    // Jobs created on the tracker may not have posting text yet.
+    if (!job.raw_description?.trim()) {
+      return NextResponse.json(
+        { error: "Add a job description before evaluating this job." },
+        { status: 400 },
+      );
+    }
+
     // 2. Fetch compact profile fields only
     const { data: profile } = await supabase
       .from("profiles")
