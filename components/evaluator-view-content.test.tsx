@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
 import { EvaluatorViewContent } from "./evaluator-view-content";
 import type { JobSummary } from "@/types/database";
+import { makeJob } from "@/test/fixtures";
 
 vi.mock("@/components/job-evaluator-form", () => ({
   JobEvaluatorForm: () => <div data-testid="job-evaluator-form" />,
@@ -22,31 +23,12 @@ const mockEvaluationSummary = {
   },
 };
 
-const mockJob = {
-  id: "job-1",
-  user_id: "user-1",
-  company_name: "Acme Corp",
-  role_title: "Engineering Manager",
+const mockJob = makeJob({
   location: "Remote",
-  job_url: null,
   raw_description: "We are looking for a manager...",
-  status: "bookmarked",
-  application_date: null,
-  contact_person: null,
-  salary_range: null,
-  recruiter_initiated: false,
-  next_action: null,
-  next_action_date: null,
-  source: null,
-  referral_name: null,
-  notes: null,
-  closed_reason: null,
-  work_mode: null,
   match_score: 82,
   evaluation_summary: mockEvaluationSummary,
-  created_at: "2026-08-01T00:00:00Z",
-  updated_at: null,
-};
+});
 
 const mockEvaluation = {
   id: "eval-1",

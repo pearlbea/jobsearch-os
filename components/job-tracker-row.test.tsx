@@ -1,16 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import JobTrackerRow from "./job-tracker-row";
-import { Job } from "@/types/database";
+import { makeJob } from "@/test/fixtures";
 
-const job = {
-  id: "job-1",
-  role_title: "Staff Engineer",
-  company_name: "Acme",
-  status: "outreach_sent",
-  match_score: 82,
-  created_at: "2026-09-01T12:00:00Z",
-} as Job;
+const job = makeJob({ status: "outreach_sent", match_score: 82 });
 
 describe("JobTrackerRow", () => {
   it("links to the job and shows the status label", () => {

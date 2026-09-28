@@ -8,7 +8,7 @@ import {
   createMockSupabaseClient,
   type MockSupabaseClient,
 } from "@/test/supabase-mock";
-import { Interaction, Job } from "@/types/database";
+import { makeInteraction, makeJob } from "@/test/fixtures";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 // The page's child components use the browser client; they don't query on render.
@@ -23,45 +23,21 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
 }));
 
-const job: Job = {
-  id: "job-1",
+const job = makeJob({
   user_id: "user-123",
   company_name: "Acme",
   role_title: "Staff Engineer",
-  location: null,
-  job_url: null,
   raw_description: "Build things.",
   status: "interviewing",
-  application_date: null,
-  contact_person: null,
-  salary_range: null,
-  recruiter_initiated: false,
-  next_action: null,
-  next_action_date: null,
-  source: null,
-  referral_name: null,
-  notes: null,
-  closed_reason: null,
-  work_mode: null,
   match_score: 82,
-  evaluation_summary: null,
   created_at: "2026-09-01T00:00:00Z",
-  updated_at: null,
-};
+});
 
-const interaction: Interaction = {
-  id: "int-1",
-  job_id: "job-1",
+const interaction = makeInteraction({
   user_id: "user-123",
   kind: "hiring_manager",
-  occurred_at: null,
-  interviewer_names: null,
-  outcome: null,
-  notes: null,
-  story_ids: null,
   created_at: "2026-09-02T00:00:00Z",
-  updated_at: null,
-};
+});
 
 const props = (job_id = "job-1") =>
   ({ params: Promise.resolve({ job_id }) }) as PageProps<"/tracker/[job_id]">;

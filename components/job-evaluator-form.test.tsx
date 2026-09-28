@@ -3,7 +3,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
 import { JobEvaluatorForm } from "./job-evaluator-form";
-import type { Job, Evaluation } from "@/types/database";
+import type { Evaluation } from "@/types/database";
+import { makeJob } from "@/test/fixtures";
 
 const mockEvaluation: Evaluation = {
   id: "eval-1",
@@ -21,31 +22,12 @@ const mockEvaluation: Evaluation = {
   created_at: "2026-08-01T00:00:00Z",
 };
 
-const mockJob: Job = {
-  id: "job-1",
-  user_id: "user-1",
-  company_name: "Acme Corp",
-  role_title: "Engineering Manager",
+const mockJob = makeJob({
   location: "Remote",
-  job_url: null,
   raw_description: "We are looking for a manager...",
-  status: "bookmarked",
-  application_date: null,
-  contact_person: null,
-  salary_range: null,
-  recruiter_initiated: false,
-  next_action: null,
-  next_action_date: null,
-  source: null,
-  referral_name: null,
-  notes: null,
-  closed_reason: null,
-  work_mode: null,
   match_score: 78,
   evaluation_summary: mockEvaluation.evaluation_summary,
-  created_at: "2026-08-01T00:00:00Z",
-  updated_at: null,
-};
+});
 
 describe("JobEvaluatorForm Component", () => {
   const onEvaluationComplete = vi.fn();

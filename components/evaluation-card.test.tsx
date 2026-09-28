@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import axe from "axe-core";
 import { EvaluationCard } from "./evaluation-card";
-import type { EvaluationSummary, Job, Evaluation } from "@/types/database";
+import type { EvaluationSummary, Evaluation } from "@/types/database";
+import { makeJob } from "@/test/fixtures";
 
 const baseEvaluationSummary: EvaluationSummary = {
   match_score: 82,
@@ -26,31 +27,12 @@ const baseEvaluation: Evaluation = {
   created_at: "2026-08-01T00:00:00Z",
 };
 
-const baseJob: Job = {
-  id: "job-1",
-  user_id: "user-1",
-  company_name: "Acme Corp",
-  role_title: "Engineering Manager",
+const baseJob = makeJob({
   location: "Remote (US)",
   job_url: "https://acme.example.com/careers/em",
-  raw_description: "We are looking for...",
-  status: "bookmarked",
-  application_date: null,
-  contact_person: null,
-  salary_range: null,
-  recruiter_initiated: false,
-  next_action: null,
-  next_action_date: null,
-  source: null,
-  referral_name: null,
-  notes: null,
-  closed_reason: null,
-  work_mode: null,
   match_score: 82,
   evaluation_summary: baseEvaluationSummary,
-  created_at: "2026-08-01T00:00:00Z",
-  updated_at: null,
-};
+});
 
 describe("EvaluationCard Component", () => {
   it("displays the role, company, location, and overall match score", () => {

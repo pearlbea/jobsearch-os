@@ -5,7 +5,7 @@ import axe from "axe-core";
 import JobTrackerForm from "./job-tracker-form";
 import { createClient } from "@/lib/supabase/client";
 import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supabase-mock";
-import { Job } from "@/types/database";
+import { makeJob } from "@/test/fixtures";
 
 const mockRefresh = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -16,31 +16,20 @@ vi.mock("@/lib/supabase/client", () => ({
   createClient: vi.fn(),
 }));
 
-const job: Job = {
-  id: "job-1",
+const job = makeJob({
   user_id: "user-123",
   company_name: "Acme",
   role_title: "Staff Engineer",
   location: "Madison, WI",
-  job_url: null,
   raw_description: "Build things.",
   status: "applied",
   application_date: "2026-09-01",
-  contact_person: null,
   salary_range: "$150k–$180k",
-  recruiter_initiated: false,
-  next_action: null,
-  next_action_date: null,
   source: "LinkedIn",
-  referral_name: null,
-  notes: null,
-  closed_reason: null,
   work_mode: "remote",
   match_score: 82,
-  evaluation_summary: null,
   created_at: "2026-09-01T00:00:00Z",
-  updated_at: null,
-};
+});
 
 describe("JobTrackerForm", () => {
   let mockSupabase: MockSupabaseClient;

@@ -6,24 +6,20 @@ import JobInteractions from "./job-interactions";
 import { createClient } from "@/lib/supabase/client";
 import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supabase-mock";
 import { Interaction } from "@/types/database";
+import { makeInteraction } from "@/test/fixtures";
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: vi.fn(),
 }));
 
-const baseInteraction: Interaction = {
-  id: "int-1",
-  job_id: "job-1",
+const baseInteraction = makeInteraction({
   user_id: "user-123",
-  kind: "recruiter_screen",
   occurred_at: "2026-09-10T15:00:00Z",
   interviewer_names: ["Dana"],
   outcome: "passed",
   notes: "Went well.",
-  story_ids: null,
   created_at: "2026-09-01T00:00:00Z",
-  updated_at: null,
-};
+});
 
 const props = {
   jobId: "job-1",
