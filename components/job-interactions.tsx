@@ -237,7 +237,9 @@ export default function JobInteractions({
       .single();
     if (error) throw error;
     setInteractions((prev) => sortInteractions([...prev, data]));
-    setEditing(null);
+    // Only close the add form. The user may have opened another form while
+    // this save was in flight, and closing that would discard their input.
+    setEditing((current) => (current === "new" ? null : current));
   };
 
   const handleUpdate = async (id: string, payload: Partial<Interaction>) => {
@@ -253,7 +255,7 @@ export default function JobInteractions({
     setInteractions((prev) =>
       sortInteractions(prev.map((i) => (i.id === id ? data : i))),
     );
-    setEditing(null);
+    setEditing((current) => (current === id ? null : current));
   };
 
   const handleDelete = async (id: string) => {

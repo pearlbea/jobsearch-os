@@ -145,6 +145,57 @@ describe("JobInteractions", () => {
     expect(screen.getByRole("button", { name: "Add" })).toBeEnabled();
   });
 
+  it("keeps a newly opened add form open when an earlier edit finishes saving", async () => {
+    let resolveSave!: (value: unknown) => void;
+    mockSupabase.single.mockReturnValue(
+      new Promise((resolve) => (resolveSave = resolve)),
+    );
+    const user = userEvent.setup();
+    render(<JobInteractions {...props} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    // While the edit is still saving, start adding a new interaction.
+    await user.click(screen.getByRole("button", { name: "Add Interaction" }));
+    await user.type(screen.getByLabelText("With"), "Sam");
+
+    resolveSave({ data: { ...baseInteraction, outcome: "rejected" }, error: null });
+
+    await waitFor(() => {
+      expect(screen.getByText("Rejected")).toBeInTheDocument();
+    });
+    expect(screen.getByLabelText("With")).toHaveValue("Sam");
+    expect(screen.getByRole("button", { name: "Add" })).toBeInTheDocument();
+  });
+
+  it("keeps a newly opened edit form open when an earlier add finishes saving", async () => {
+    let resolveSave!: (value: unknown) => void;
+    mockSupabase.single.mockReturnValue(
+      new Promise((resolve) => (resolveSave = resolve)),
+    );
+    const user = userEvent.setup();
+    render(<JobInteractions {...props} />);
+
+    await user.click(screen.getByRole("button", { name: "Add Interaction" }));
+    await user.selectOptions(screen.getByLabelText("Type"), "technical");
+    await user.click(screen.getByRole("button", { name: "Add" }));
+    // While the add is still saving, start editing the existing interaction.
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.type(screen.getByLabelText("Notes"), " Follow-up sent.");
+
+    resolveSave({
+      data: { ...baseInteraction, id: "int-new", kind: "technical" },
+      error: null,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Technical")).toBeInTheDocument();
+    });
+    expect(screen.getByLabelText("Notes")).toHaveValue(
+      "Went well. Follow-up sent.",
+    );
+  });
+
   it("deletes an interaction after confirming", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
