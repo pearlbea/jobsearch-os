@@ -25,8 +25,7 @@ export default async function TrackerPage() {
       {error && <p>Error loading job summaries: {error.message}</p>}
       {jobSummaries?.length === 0 && (
         <p className="text-sm text-muted-foreground">
-          No jobs yet. Add one here, or evaluate a job posting and it will
-          show up here.
+          No jobs yet. Add one to start tracking and evaluating it.
         </p>
       )}
       <ul>

@@ -13,7 +13,7 @@ type ResumeSource = "profile" | "tailored";
 const textareaClass =
   "w-full px-3.5 py-3 border border-[#E2DACB] rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary";
 
-// The one place a job gets evaluated. Evaluates the job's saved description
+// Evaluates the job's saved description
 // against either the profile resume or a resume tailored to this job (saved
 // on the job, so re-evaluations reuse it), and shows the results + history.
 export default function JobEvaluationPanel({
@@ -24,7 +24,6 @@ export default function JobEvaluationPanel({
 }: {
   job: Job;
   userId: string;
-  /** Newest first. */
   initialEvaluations: Evaluation[];
   hasProfileResume: boolean;
 }) {
@@ -63,7 +62,11 @@ export default function JobEvaluationPanel({
   const saveResumeChoice = async () => {
     if (savesAsProfileResume) {
       const { error } = await supabase.from("profiles").upsert(
-        { id: userId, resume: resumeText, updated_at: new Date().toISOString() },
+        {
+          id: userId,
+          resume: resumeText,
+          updated_at: new Date().toISOString(),
+        },
         { onConflict: "id" },
       );
       if (error) throw error;
@@ -94,7 +97,9 @@ export default function JobEvaluationPanel({
         setResumeSource("profile");
       }
 
-      const res = await fetch(`/api/jobs/${job.id}/evaluate`, { method: "POST" });
+      const res = await fetch(`/api/jobs/${job.id}/evaluate`, {
+        method: "POST",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Evaluation failed.");
 
@@ -129,8 +134,8 @@ export default function JobEvaluationPanel({
 
         {!hasDescription ? (
           <p className="text-sm text-foreground">
-            Add a job description in the details above and save to evaluate
-            this job.
+            Add a job description in the details above and save to evaluate this
+            job.
           </p>
         ) : (
           <fieldset className="space-y-3">
@@ -139,23 +144,25 @@ export default function JobEvaluationPanel({
             </legend>
             {hasProfileResume ? (
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm text-foreground">
-                  <input
-                    type="radio"
-                    name="resume-source"
-                    value="profile"
-                    checked={resumeSource === "profile"}
-                    onChange={() => setResumeSource("profile")}
-                    className="accent-primary"
-                  />
-                  My profile resume
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm text-foreground">
+                    <input
+                      type="radio"
+                      name="resume-source"
+                      value="profile"
+                      checked={resumeSource === "profile"}
+                      onChange={() => setResumeSource("profile")}
+                      className="accent-primary"
+                    />
+                    My profile resume
+                  </label>
                   <Link
                     href="/profile"
                     className="text-xs font-semibold text-primary hover:underline"
                   >
                     Edit
                   </Link>
-                </label>
+                </div>
                 <label className="flex items-center gap-2 text-sm text-foreground">
                   <input
                     type="radio"
@@ -192,8 +199,8 @@ export default function JobEvaluationPanel({
                   className={textareaClass}
                 />
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  Your name, email, phone number, and website are removed
-                  before your resume is shared with the AI evaluator.
+                  Your name, email, phone number, and website are removed before
+                  your resume is shared with the AI evaluator.
                 </p>
               </div>
             )}
