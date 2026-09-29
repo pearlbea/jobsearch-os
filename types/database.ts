@@ -55,7 +55,7 @@ export interface Job {
   role_title: string;
   location: string | null;
   job_url: string | null;
-  raw_description: string;
+  raw_description: string | null;
   status: ApplicationStatus | null;
   application_date: string | null; // ISO date (YYYY-MM-DD)
   contact_person: string | null;
@@ -68,6 +68,8 @@ export interface Job {
   notes: string | null;
   closed_reason: string | null;
   work_mode: WorkMode | null;
+  // Overrides the profile resume when evaluating this job.
+  tailored_resume: string | null;
   // Denormalized snapshot of the most recent row in `evaluations` for this
   // job, kept in sync on every insert/re-evaluation so list views don't need
   // to join. The full history lives in `evaluations`.
@@ -146,10 +148,7 @@ export interface Database {
       jobs: {
         Row: Job;
         Insert: Partial<Job> &
-          Pick<
-            Job,
-            "user_id" | "company_name" | "role_title" | "raw_description"
-          >;
+          Pick<Job, "user_id" | "company_name" | "role_title">;
         Update: Partial<Job>;
         Relationships: [];
       };

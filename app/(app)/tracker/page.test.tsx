@@ -13,6 +13,7 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(() => {
     throw new Error("NEXT_REDIRECT");
   }),
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
 }));
 
 describe("TrackerPage", () => {
@@ -30,11 +31,16 @@ describe("TrackerPage", () => {
     mockSupabase.order.mockResolvedValue({ data: [], error: null });
   });
 
-  it("renders the Tracker Page heading", async () => {
+  it("renders the heading, an Add New Job link, and an empty state", async () => {
     render(await TrackerPage());
     expect(
       screen.getByRole("heading", { name: "Job Tracker" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add New Job" })).toHaveAttribute(
+      "href",
+      "/tracker/new",
+    );
+    expect(screen.getByText(/No jobs yet/)).toBeInTheDocument();
   });
 
   it("lists the user's jobs, newest first, each linking to its tracker page", async () => {
@@ -56,7 +62,7 @@ describe("TrackerPage", () => {
     expect(
       screen.getAllByRole("link").map((link) => link.getAttribute("href")),
     ).toEqual(["/tracker/job-2", "/tracker/job-1"]);
-    expect(screen.getByText("Staff Engineer")).toBeInTheDocument();
+    expect(screen.queryByText(/No jobs yet/)).not.toBeInTheDocument();
     expect(screen.getByText("Applied")).toBeInTheDocument();
   });
 
@@ -71,6 +77,6 @@ describe("TrackerPage", () => {
     expect(
       screen.getByText("Error loading job summaries: connection refused"),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("link", { name: /Engineering Manager/ })).toHaveLength(0);
   });
 });

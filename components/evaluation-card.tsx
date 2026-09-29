@@ -15,6 +15,8 @@ interface EvaluationCardProps {
   evaluation: Evaluation;
   onReevaluate?: () => void;
   isReevaluating?: boolean;
+  /** Hide the role/company/URL header, e.g. on the job page, which shows them already. */
+  showHeader?: boolean;
 }
 
 export function EvaluationCard({
@@ -22,6 +24,7 @@ export function EvaluationCard({
   evaluation,
   onReevaluate,
   isReevaluating,
+  showHeader = true,
 }: EvaluationCardProps) {
   const {
     match_score: matchScore,
@@ -40,27 +43,31 @@ export function EvaluationCard({
   return (
     <div className="bg-card border border-border rounded-2xl p-8 shadow-[0_6px_20px_rgba(60,45,20,0.05)]">
       <div className="flex justify-between items-start gap-4 mb-6">
-        <div className="min-w-0">
-          <h2 className="text-2xl font-extrabold tracking-tight text-foreground mb-1">
-            {job.role_title}
-          </h2>
-          <div className="text-[15px] text-muted-foreground-strong mb-2">
-            {job.company_name}
-          </div>
-          {job.job_url && /^https?:\/\//i.test(job.job_url) && (
+        {showHeader ? (
+          <div className="min-w-0">
+            <h2 className="text-2xl font-extrabold tracking-tight text-foreground mb-1">
+              {job.role_title}
+            </h2>
             <div className="text-[15px] text-muted-foreground-strong mb-2">
-              <Link
-                className="text-sm text-muted-foreground hover:text-foreground text-nowrap truncate max-w-full inline-block"
-                href={job.job_url}
-                prefetch={false}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                {job.job_url}
-              </Link>
+              {job.company_name}
             </div>
-          )}
-        </div>
+            {job.job_url && /^https?:\/\//i.test(job.job_url) && (
+              <div className="text-[15px] text-muted-foreground-strong mb-2">
+                <Link
+                  className="text-sm text-muted-foreground hover:text-foreground text-nowrap truncate max-w-full inline-block"
+                  href={job.job_url}
+                  prefetch={false}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {job.job_url}
+                </Link>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div />
+        )}
         <div
           className="text-center rounded-xl px-5.5 py-3 min-w-[100px] shrink-0"
           style={{

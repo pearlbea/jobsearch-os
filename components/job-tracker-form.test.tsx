@@ -81,6 +81,35 @@ describe("JobTrackerForm", () => {
     expect(mockRefresh).toHaveBeenCalled();
   });
 
+  it("saves the job description, keeping its formatting, and blank as null", async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<JobTrackerForm job={job} />);
+
+    const description = screen.getByLabelText("Job Description");
+    expect(description).toHaveValue("Build things.");
+    await user.clear(description);
+    await user.type(description, "Role:{enter}  Build things.");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(mockSupabase.update).toHaveBeenCalledWith(
+        expect.objectContaining({ raw_description: "Role:\n  Build things." }),
+      ),
+    );
+    unmount();
+
+    render(<JobTrackerForm job={job} />);
+    await user.clear(screen.getByLabelText("Job Description"));
+    await user.type(screen.getByLabelText("Job Description"), "   ");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(mockSupabase.update).toHaveBeenLastCalledWith(
+        expect.objectContaining({ raw_description: null }),
+      ),
+    );
+  });
+
   it("shows an error when the save fails", async () => {
     mockSupabase.single.mockResolvedValue({
       data: null,

@@ -11,13 +11,14 @@ const STATUS_OPTIONS = labelOptions(STATUS_LABELS);
 const WORK_MODE_OPTIONS = labelOptions(WORK_MODE_LABELS);
 
 // Fields this form edits. match_score/evaluation_summary come from the
-// evaluator and raw_description drives it, so they aren't editable here.
+// evaluator, and tailored_resume is chosen in JobEvaluationPanel.
 type TrackerFields = Pick<
   Job,
   | "company_name"
   | "role_title"
   | "location"
   | "job_url"
+  | "raw_description"
   | "status"
   | "work_mode"
   | "application_date"
@@ -43,6 +44,7 @@ function toFormValues(job: Job): FormValues {
     role_title: job.role_title,
     location: job.location ?? "",
     job_url: job.job_url ?? "",
+    raw_description: job.raw_description ?? "",
     status: job.status ?? "",
     work_mode: job.work_mode ?? "",
     application_date: job.application_date ?? "",
@@ -65,6 +67,8 @@ function toPayload(values: FormValues): Partial<Job> {
     role_title: values.role_title.trim(),
     location: orNull(values.location),
     job_url: orNull(values.job_url),
+    // Not trimmed: a pasted posting's formatting is kept as-is.
+    raw_description: values.raw_description.trim() ? values.raw_description : null,
     status: orNull(values.status) as ApplicationStatus | null,
     work_mode: orNull(values.work_mode) as WorkMode | null,
     application_date: orNull(values.application_date),
@@ -216,6 +220,17 @@ export default function JobTrackerForm({ job }: { job: Job }) {
             Job URL
           </label>
           <input type="url" className={inputClass} {...textProps("job_url")} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className={labelClass} htmlFor="raw_description">
+            Job Description
+          </label>
+          <textarea
+            rows={8}
+            placeholder="Paste the job posting here. It's needed to evaluate the job."
+            className="w-full px-3.5 py-3 border border-[#E2DACB] rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
+            {...textProps("raw_description")}
+          />
         </div>
       </fieldset>
 

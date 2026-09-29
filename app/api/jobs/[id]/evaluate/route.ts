@@ -7,6 +7,18 @@ import {
   runEvaluation,
 } from "@/lib/evaluation-engine";
 
+// Raised by the evaluations_enforce_limit trigger.
+const EVALUATION_LIMIT_SQLSTATE = "EVLIM";
+
+function limitReachedResponse() {
+  return NextResponse.json(
+    {
+      error: `You've reached the limit of ${MAX_EVALUATIONS_PER_USER} evaluations for this demo.`,
+    },
+    { status: 403 },
+  );
+}
+
 export async function POST(
   req: NextRequest,
   props: { params: Promise<{ id: string }> },
@@ -36,25 +48,43 @@ export async function POST(
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
-    // 2. Fetch compact profile fields only
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, resume")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
-
-    if (!profile.resume?.trim()) {
+    // Jobs created on the tracker may not have posting text yet.
+    if (!job.raw_description?.trim()) {
       return NextResponse.json(
-        { error: "Add a resume to your profile before evaluating a job." },
+        { error: "Add a job description before evaluating this job." },
         { status: 400 },
       );
     }
 
-    // 3. Enforce the per-user evaluation cap before spending any tokens
+    // 2. Fetch compact profile fields only. The row only exists once the user
+    // has saved a profile, so a missing one just means no profile resume.
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("full_name, resume")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) throw profileError;
+
+    // A resume tailored to this job wins over the profile's default one.
+    const resumeUsed = job.tailored_resume?.trim()
+      ? job.tailored_resume
+      : profile?.resume;
+
+    if (!resumeUsed?.trim()) {
+      return NextResponse.json(
+        {
+          error:
+            "Add a resume, either to your profile or tailored to this job, before evaluating.",
+        },
+        { status: 400 },
+      );
+    }
+
+    // 3. Check the per-user evaluation cap before spending any tokens. This is
+    // only a fast path: two concurrent requests can both pass it. The real
+    // enforcement is the evaluations_enforce_limit trigger (see
+    // supabase/schema.sql), which refuses the insert in step 6.
     const { count: evaluationCount, error: countError } = await supabase
       .from("evaluations")
       .select("id", { count: "exact", head: true })
@@ -63,12 +93,7 @@ export async function POST(
     if (countError) throw countError;
 
     if ((evaluationCount ?? 0) >= MAX_EVALUATIONS_PER_USER) {
-      return NextResponse.json(
-        {
-          error: `You've reached the limit of ${MAX_EVALUATIONS_PER_USER} evaluations for this demo.`,
-        },
-        { status: 403 },
-      );
+      return limitReachedResponse();
     }
 
     // 4. Fetch story metadata only (omit full story_text to save input tokens)
@@ -91,7 +116,7 @@ export async function POST(
     }
 
     const { evalResult, fullEvaluationSummary } = await runEvaluation({
-      profile,
+      profile: { full_name: profile?.full_name ?? null, resume: resumeUsed },
       stories,
       cleanedDescription,
     });
@@ -104,55 +129,19 @@ export async function POST(
         user_id: user.id,
         match_score: evalResult.score,
         evaluation_summary: fullEvaluationSummary,
-        resume_snapshot: profile.resume ?? null,
+        resume_snapshot: resumeUsed,
       })
       .select()
       .single();
 
+    // The limit trigger's error: another request got the last slot while
+    // this one was evaluating.
+    if (evalInsertError?.code === EVALUATION_LIMIT_SQLSTATE) {
+      return limitReachedResponse();
+    }
     if (evalInsertError) throw evalInsertError;
 
-    // 7. Re-check the cap now that the row is actually committed. Step 3 is
-    // only a fast-path to avoid spending tokens in the common case — it can't
-    // prevent two concurrent requests from both passing it before either has
-    // inserted. This recheck is the real enforcement, and it has to be a
-    // per-row decision, not a shared count comparison: if two requests both
-    // read the same over-cap total, comparing that total against the cap
-    // would make BOTH of them roll back, underfilling the cap. Instead, rank
-    // this row against the user's other evaluations by insertion order — only
-    // the rows that actually fall beyond the cap roll themselves back (and
-    // skip the job update below), so the final count settles at exactly the
-    // cap regardless of how requests race.
-    const { data: userEvaluations, error: rankError } = await supabase
-      .from("evaluations")
-      .select("id")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true })
-      .order("id", { ascending: true });
-
-    if (rankError) throw rankError;
-
-    const rank =
-      (userEvaluations ?? []).findIndex((e) => e.id === savedEvaluation.id) +
-      1;
-
-    if (rank > MAX_EVALUATIONS_PER_USER) {
-      const { error: rollbackEvalError } = await supabase
-        .from("evaluations")
-        .delete()
-        .eq("id", savedEvaluation.id);
-      if (rollbackEvalError) {
-        console.error("Failed to roll back evaluation over cap:", rollbackEvalError);
-      }
-
-      return NextResponse.json(
-        {
-          error: `You've reached the limit of ${MAX_EVALUATIONS_PER_USER} evaluations for this demo.`,
-        },
-        { status: 403 },
-      );
-    }
-
-    // 8. Refresh the job's denormalized snapshot from the evaluations table's
+    // 7. Refresh the job's denormalized snapshot from the evaluations table's
     // own latest row (by created_at) rather than this request's own result.
     // Two re-evaluations of the same job can race, and their `jobs` updates
     // can land in either order — reading "latest" back out here means

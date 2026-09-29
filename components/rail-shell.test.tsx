@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import axe from "axe-core";
 import { RailShell } from "./rail-shell";
 
-let mockPathname = "/evaluator";
+let mockPathname = "/tracker";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
@@ -17,7 +17,7 @@ vi.mock("@/lib/supabase/client", () => ({
 describe("RailShell", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPathname = "/evaluator";
+    mockPathname = "/tracker";
   });
 
   it("renders the wordmark, nav items, user email, and sign out", () => {
@@ -30,9 +30,6 @@ describe("RailShell", () => {
     expect(
       screen.getAllByRole("link", { name: "JobFit Scorecard" })[0],
     ).toHaveAttribute("href", "/");
-    expect(
-      screen.getAllByRole("link", { name: "Evaluate" })[0],
-    ).toHaveAttribute("href", "/evaluator");
     expect(screen.getAllByRole("link", { name: "Profile" })[0]).toHaveAttribute(
       "href",
       "/profile",
@@ -46,18 +43,8 @@ describe("RailShell", () => {
       screen.getAllByRole("button", { name: "Sign out" })[0],
     ).toBeInTheDocument();
     expect(screen.getByText("content")).toBeInTheDocument();
-  });
-
-  it("marks the Evaluate link active when its path matches", () => {
-    mockPathname = "/evaluator";
-    render(
-      <RailShell userEmail="pearl@example.com">
-        <div>content</div>
-      </RailShell>,
-    );
-
-    const evaluateLinks = screen.getAllByRole("link", { name: "Evaluate" });
-    expect(evaluateLinks[0].className).toMatch(/bg-primary/);
+    // Evaluation lives on each job's tracker page now.
+    expect(screen.queryByRole("link", { name: "Evaluate" })).not.toBeInTheDocument();
   });
 
   it("marks the Tracker link active when its path matches", () => {
@@ -70,6 +57,32 @@ describe("RailShell", () => {
 
     const trackerLinks = screen.getAllByRole("link", { name: "Tracker" });
     expect(trackerLinks[0].className).toMatch(/bg-primary/);
+  });
+
+  it("keeps the Tracker link active on a job's tracker page", () => {
+    mockPathname = "/tracker/job-1";
+    render(
+      <RailShell userEmail="pearl@example.com">
+        <div>content</div>
+      </RailShell>,
+    );
+
+    const trackerLinks = screen.getAllByRole("link", { name: "Tracker" });
+    expect(trackerLinks[0].className).toMatch(/bg-primary/);
+    const profileLinks = screen.getAllByRole("link", { name: "Profile" });
+    expect(profileLinks[0].className).not.toMatch(/bg-primary/);
+  });
+
+  it("doesn't treat a path that merely starts with the same letters as active", () => {
+    mockPathname = "/trackers";
+    render(
+      <RailShell userEmail="pearl@example.com">
+        <div>content</div>
+      </RailShell>,
+    );
+
+    const trackerLinks = screen.getAllByRole("link", { name: "Tracker" });
+    expect(trackerLinks[0].className).not.toMatch(/bg-primary/);
   });
 
   it("has no detectable accessibility violations", async () => {

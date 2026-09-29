@@ -154,12 +154,12 @@ export default async function Home() {
             </p>
           </Link>
           <Link
-            href="/evaluator"
+            href="/tracker"
             className="block rounded-2xl border border-border bg-card p-6 shadow-[0_6px_20px_rgba(60,45,20,0.05)] transition-colors hover:border-primary/40"
           >
-            <h2 className="text-lg font-bold text-foreground">Job Evaluator</h2>
+            <h2 className="text-lg font-bold text-foreground">Job Tracker</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Evaluate job postings against your profile.
+              Add jobs, evaluate your fit, and track your applications.
             </p>
           </Link>
         </div>

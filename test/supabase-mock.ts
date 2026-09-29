@@ -10,6 +10,7 @@ export function createMockQueryBuilder(overrides: Record<string, unknown> = {}) 
   return {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    not: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
@@ -17,6 +18,7 @@ export function createMockQueryBuilder(overrides: Record<string, unknown> = {}) 
     limit: vi.fn().mockReturnThis(),
     upsert: vi.fn().mockResolvedValue({ error: null }),
     single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
     ...overrides,
   };
 }

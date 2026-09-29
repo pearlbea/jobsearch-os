@@ -23,9 +23,9 @@ export function ProfileForm({
   const [fullName, setFullName] = useState(initialProfile?.full_name || "");
   const [resumeText, setResumeText] = useState(initialProfile?.resume || "");
 
-  // A profile row is auto-created when the user confirms their email, so
-  // its existence doesn't mean they've completed it — an empty resume does,
-  // since that's what's required to run an evaluation.
+  // The profile row only exists once something has saved it (this form, or
+  // the job page's "save as my default resume"), and a row can exist without
+  // a resume. No resume yet is the real signal for "hasn't finished setup".
   const isFirstSave = !initialProfile?.resume?.trim();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,7 +55,7 @@ export function ProfileForm({
       if (error) throw error;
 
       if (isFirstSave) {
-        router.push("/evaluator?welcome=1");
+        router.push("/tracker");
         return;
       }
 
