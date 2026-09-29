@@ -113,7 +113,7 @@ describe("Home page", () => {
     expect(mockSupabase.from).not.toHaveBeenCalled();
   });
 
-  it("shows the profile/evaluator dashboard when logged in with a profile", async () => {
+  it("shows the profile/tracker dashboard when logged in with a profile", async () => {
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: { id: "user-123", email: "pearl@example.com" } },
       error: null,
@@ -127,7 +127,7 @@ describe("Home page", () => {
     render(page);
 
     // Scope to the dashboard content, since the rail nav has its own
-    // "Profile" / "Evaluate" links with overlapping accessible names.
+    // "Profile" / "Tracker" links with overlapping accessible names.
     const main = within(screen.getByRole("main"));
 
     expect(screen.getByText("Welcome back, Jane Doe.")).toBeInTheDocument();
@@ -135,9 +135,9 @@ describe("Home page", () => {
       "href",
       "/profile",
     );
-    expect(main.getByRole("link", { name: /Job Evaluator/ })).toHaveAttribute(
+    expect(main.getByRole("link", { name: /Job Tracker/ })).toHaveAttribute(
       "href",
-      "/evaluator",
+      "/tracker",
     );
   });
 

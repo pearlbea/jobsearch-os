@@ -45,13 +45,13 @@ describe("GET /auth/callback", () => {
 
   it("honors an explicit safe next param", async () => {
     const req = new NextRequest(
-      "http://localhost:3000/auth/callback?code=abc123&next=/evaluator",
+      "http://localhost:3000/auth/callback?code=abc123&next=/tracker",
     );
 
     const res = await GET(req);
 
     expect(res.headers.get("location")).toBe(
-      "http://localhost:3000/evaluator",
+      "http://localhost:3000/tracker",
     );
   });
 

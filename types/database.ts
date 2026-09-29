@@ -68,6 +68,8 @@ export interface Job {
   notes: string | null;
   closed_reason: string | null;
   work_mode: WorkMode | null;
+  // Overrides the profile resume when evaluating this job.
+  tailored_resume: string | null;
   // Denormalized snapshot of the most recent row in `evaluations` for this
   // job, kept in sync on every insert/re-evaluation so list views don't need
   // to join. The full history lives in `evaluations`.

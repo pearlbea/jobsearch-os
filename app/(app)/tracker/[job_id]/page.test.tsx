@@ -8,7 +8,7 @@ import {
   createMockSupabaseClient,
   type MockSupabaseClient,
 } from "@/test/supabase-mock";
-import { makeInteraction, makeJob } from "@/test/fixtures";
+import { makeEvaluation, makeInteraction, makeJob } from "@/test/fixtures";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 // The page's child components use the browser client; they don't query on render.
@@ -39,13 +39,17 @@ const interaction = makeInteraction({
   created_at: "2026-09-02T00:00:00Z",
 });
 
+const evaluation = makeEvaluation({ user_id: "user-123" });
+
 const props = (job_id = "job-1") =>
   ({ params: Promise.resolve({ job_id }) }) as PageProps<"/tracker/[job_id]">;
 
 describe("JobPage", () => {
   let mockSupabase: MockSupabaseClient;
   let jobsQuery: ReturnType<typeof createMockQueryBuilder>;
+  let evaluationsQuery: ReturnType<typeof createMockQueryBuilder>;
   let interactionsQuery: ReturnType<typeof createMockQueryBuilder>;
+  let profilesQuery: ReturnType<typeof createMockQueryBuilder>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -56,16 +60,29 @@ describe("JobPage", () => {
       error: null,
     });
 
-    // The page queries both tables in parallel, so each needs its own chain.
+    // The page queries four tables in parallel, so each needs its own chain.
     jobsQuery = createMockQueryBuilder({
       single: vi.fn().mockResolvedValue({ data: job, error: null }),
+    });
+    evaluationsQuery = createMockQueryBuilder({
+      order: vi.fn().mockResolvedValue({ data: [evaluation], error: null }),
     });
     interactionsQuery = createMockQueryBuilder({
       order: vi.fn().mockResolvedValue({ data: [interaction], error: null }),
     });
-    mockSupabase.from.mockImplementation((table: string) =>
-      table === "jobs" ? jobsQuery : interactionsQuery,
-    );
+    profilesQuery = createMockQueryBuilder({
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { resume: "Profile resume." },
+        error: null,
+      }),
+    });
+    const queries: Record<string, ReturnType<typeof createMockQueryBuilder>> = {
+      jobs: jobsQuery,
+      evaluations: evaluationsQuery,
+      interactions: interactionsQuery,
+      profiles: profilesQuery,
+    };
+    mockSupabase.from.mockImplementation((table: string) => queries[table]);
   });
 
   it("renders the job form and its interactions", async () => {
@@ -89,34 +106,57 @@ describe("JobPage", () => {
     ).toHaveAttribute("href", "/tracker");
   });
 
-  it("offers to add a description and evaluate when the job hasn't been evaluated", async () => {
-    jobsQuery.single.mockResolvedValue({
-      data: { ...job, match_score: null, raw_description: null },
-      error: null,
+  it("shows the job's evaluation with the option to re-evaluate", async () => {
+    render(await JobPage(props()));
+
+    expect(screen.getByRole("heading", { name: "Evaluation" })).toBeInTheDocument();
+    expect(screen.getByText("82%")).toBeInTheDocument();
+    expect(screen.getByText("Lead with platform work.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Re-evaluate" })).toBeEnabled();
+    // The profile has a resume, so it's offered as the default.
+    expect(screen.getByLabelText(/My profile resume/)).toBeChecked();
+  });
+
+  it("offers to evaluate a job that hasn't been evaluated yet", async () => {
+    evaluationsQuery.order.mockResolvedValue({ data: [], error: null });
+
+    render(await JobPage(props()));
+
+    expect(screen.getByRole("button", { name: "Evaluate" })).toBeEnabled();
+    expect(screen.queryByText("82%")).not.toBeInTheDocument();
+  });
+
+  it("asks for a resume when the user has no profile row yet", async () => {
+    evaluationsQuery.order.mockResolvedValue({ data: [], error: null });
+    profilesQuery.maybeSingle.mockResolvedValue({ data: null, error: null });
+
+    render(await JobPage(props()));
+
+    expect(screen.getByLabelText("Your Resume")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/My profile resume/)).not.toBeInTheDocument();
+  });
+
+  it("scopes the evaluations and profile queries to the job and user", async () => {
+    await JobPage(props());
+
+    expect(evaluationsQuery.eq).toHaveBeenCalledWith("job_id", "job-1");
+    expect(evaluationsQuery.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(evaluationsQuery.order).toHaveBeenCalledWith("created_at", {
+      ascending: false,
     });
-
-    render(await JobPage(props()));
-
-    expect(
-      screen.getByRole("heading", { name: "Evaluate This Job" }),
-    ).toBeInTheDocument();
-    expect(screen.getByLabelText("Job Description")).toHaveValue("");
-    expect(
-      screen.queryByRole("link", { name: "View full evaluation" }),
-    ).not.toBeInTheDocument();
+    expect(profilesQuery.eq).toHaveBeenCalledWith("id", "user-123");
   });
 
-  it("links to the evaluation instead when the job has been evaluated", async () => {
-    render(await JobPage(props()));
+  it.each(["evaluations", "profiles"])(
+    "throws when loading %s fails",
+    async (table) => {
+      const failure = { data: null, error: new Error(`${table} failed`) };
+      if (table === "evaluations") evaluationsQuery.order.mockResolvedValue(failure);
+      else profilesQuery.maybeSingle.mockResolvedValue(failure);
 
-    expect(screen.getByText("Match score: 82%")).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "View full evaluation" }),
-    ).toHaveAttribute("href", "/evaluator?job=job-1");
-    expect(
-      screen.queryByRole("heading", { name: "Evaluate This Job" }),
-    ).not.toBeInTheDocument();
-  });
+      await expect(JobPage(props())).rejects.toThrow(`${table} failed`);
+    },
+  );
 
   it("scopes both queries to the requested job and the logged-in user", async () => {
     await JobPage(props());

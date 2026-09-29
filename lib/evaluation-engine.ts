@@ -12,6 +12,8 @@ const breakdownFieldList = Object.keys(SCORE_DIMENSIONS)
   .map((key) => `breakdown.${key}`)
   .join(", ");
 
+// Also hard-coded in the evaluations_enforce_limit trigger (supabase/schema.sql),
+// which is what actually enforces it; supabase/schema.test.ts keeps them equal.
 export const MAX_EVALUATIONS_PER_USER = 5;
 
 // Strip boilerplate equal opportunity / legal footer text from the pasted JD.

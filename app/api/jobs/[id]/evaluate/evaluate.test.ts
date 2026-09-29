@@ -153,7 +153,7 @@ describe("POST /api/jobs/[id]/evaluate", () => {
       }
       if (table === "profiles") {
         return createMockQueryBuilder({
-          single: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
         });
       }
       if (table === "evaluations") {
@@ -201,7 +201,7 @@ describe("POST /api/jobs/[id]/evaluate", () => {
       }
       if (table === "profiles") {
         return createMockQueryBuilder({
-          single: vi.fn().mockResolvedValue({
+          maybeSingle: vi.fn().mockResolvedValue({
             data: { full_name: "Pearl Latteier", resume: null },
             error: null,
           }),
@@ -215,9 +215,216 @@ describe("POST /api/jobs/[id]/evaluate", () => {
 
     expect(res.status).toBe(400);
     expect(json).toEqual({
-      error: "Add a resume to your profile before evaluating a job.",
+      error:
+        "Add a resume, either to your profile or tailored to this job, before evaluating.",
     });
     expect(generateText).not.toHaveBeenCalled();
+  });
+
+  it("should return 400 with no profile row and no tailored resume", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-123" } },
+      error: null,
+    });
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === "jobs") {
+        return createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({
+            data: { id: "job-1", user_id: "user-123", raw_description: "A role." },
+            error: null,
+          }),
+        });
+      }
+      if (table === "profiles") {
+        return createMockQueryBuilder({
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        });
+      }
+      throw new Error(`Unexpected query on ${table}`);
+    });
+
+    const res = await POST(makeRequest(), makeProps());
+
+    expect(res.status).toBe(400);
+    expect(generateText).not.toHaveBeenCalled();
+  });
+
+  it("should return 403, without updating the job, when the limit trigger refuses the insert", async () => {
+    // Two requests passed the fast-path count; the other one took the last slot.
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-123" } },
+      error: null,
+    });
+    const jobsBuilders: ReturnType<typeof createMockQueryBuilder>[] = [];
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === "jobs") {
+        const builder = createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({
+            data: { id: "job-1", user_id: "user-123", raw_description: "A role." },
+            error: null,
+          }),
+        });
+        jobsBuilders.push(builder);
+        return builder;
+      }
+      if (table === "profiles") {
+        return createMockQueryBuilder({
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { full_name: "Pearl Latteier", resume: "A resume." },
+            error: null,
+          }),
+        });
+      }
+      if (table === "stories") {
+        return createMockQueryBuilder({
+          eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+        });
+      }
+      return createMockQueryBuilder({
+        single: vi.fn().mockResolvedValue({
+          data: null,
+          error: { code: "EVLIM", message: "evaluation limit reached" },
+        }),
+      });
+    });
+    (generateText as Mock).mockResolvedValue({
+      output: {
+        co: "Lyric",
+        title: "Engineering Manager",
+        remote: true,
+        breakdown: { tech: 80, domain: 80, scope: 80 },
+        strengths: [],
+        gaps: [],
+        advice: "",
+        skills: [],
+      },
+    });
+
+    const res = await POST(makeRequest(), makeProps());
+    const json = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(json).toEqual({
+      error: "You've reached the limit of 5 evaluations for this demo.",
+    });
+    // Only the initial job fetch; the snapshot update never ran.
+    expect(jobsBuilders).toHaveLength(1);
+    expect(jobsBuilders[0].update).not.toHaveBeenCalled();
+  });
+
+  describe("which resume is evaluated", () => {
+    const profileResume = "Profile resume: platform engineering leader.";
+    const tailoredResume = "Tailored resume: HealthTech data platform lead.";
+
+    // Runs a successful evaluation and returns what was inserted into
+    // `evaluations` and what was sent to the model.
+    async function evaluate(
+      job: Record<string, unknown>,
+      profile: Record<string, unknown> | null = {
+        full_name: "Pearl Latteier",
+        resume: profileResume,
+      },
+    ) {
+      mockSupabase.auth.getUser.mockResolvedValue({
+        data: { user: { id: "user-123" } },
+        error: null,
+      });
+      const evaluationBuilders: ReturnType<typeof createMockQueryBuilder>[] = [];
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === "jobs") {
+          return createMockQueryBuilder({
+            single: vi.fn().mockResolvedValue({ data: job, error: null }),
+          });
+        }
+        if (table === "profiles") {
+          return createMockQueryBuilder({
+            maybeSingle: vi.fn().mockResolvedValue({ data: profile, error: null }),
+          });
+        }
+        if (table === "stories") {
+          return createMockQueryBuilder({
+            eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+          });
+        }
+        const builder = createMockQueryBuilder({
+          single: vi.fn().mockResolvedValue({
+            data: { id: "eval-2", match_score: 80, evaluation_summary: {} },
+            error: null,
+          }),
+        });
+        evaluationBuilders.push(builder);
+        return builder;
+      });
+      (generateText as Mock).mockResolvedValue({
+        output: {
+          co: "Lyric",
+          title: "Engineering Manager",
+          remote: true,
+          breakdown: { tech: 80, domain: 80, scope: 80 },
+          strengths: [],
+          gaps: [],
+          advice: "",
+          skills: [],
+        },
+      });
+
+      const res = await POST(makeRequest(), makeProps());
+      expect(res.status).toBe(200);
+
+      const inserted = evaluationBuilders
+        .flatMap((b) => b.insert.mock.calls)
+        .map(([row]) => row);
+      return {
+        inserted,
+        prompt: JSON.stringify((generateText as Mock).mock.calls[0][0]),
+      };
+    }
+
+    const baseJob = {
+      id: "job-1",
+      user_id: "user-123",
+      raw_description: "Lyric is looking for an Engineering Manager...",
+    };
+
+    it("uses the job's tailored resume when it has one", async () => {
+      const { inserted, prompt } = await evaluate({
+        ...baseJob,
+        tailored_resume: tailoredResume,
+      });
+
+      expect(inserted).toEqual([
+        expect.objectContaining({ resume_snapshot: tailoredResume }),
+      ]);
+      expect(prompt).toContain("HealthTech data platform lead");
+      expect(prompt).not.toContain("platform engineering leader");
+    });
+
+    it("uses the tailored resume when the user has no profile row yet", async () => {
+      const { inserted, prompt } = await evaluate(
+        { ...baseJob, tailored_resume: tailoredResume },
+        null,
+      );
+
+      expect(inserted).toEqual([
+        expect.objectContaining({ resume_snapshot: tailoredResume }),
+      ]);
+      expect(prompt).toContain("HealthTech data platform lead");
+    });
+
+    it.each([null, "   "])(
+      "falls back to the profile resume when the tailored one is %j",
+      async (tailored_resume) => {
+        const { inserted, prompt } = await evaluate({
+          ...baseJob,
+          tailored_resume,
+        });
+
+        expect(inserted).toEqual([
+          expect.objectContaining({ resume_snapshot: profileResume }),
+        ]);
+        expect(prompt).toContain("platform engineering leader");
+      },
+    );
   });
 
   it("should return 403 if the user has reached the evaluation limit", async () => {
@@ -245,7 +452,7 @@ describe("POST /api/jobs/[id]/evaluate", () => {
       }
       if (table === "profiles") {
         return createMockQueryBuilder({
-          single: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
         });
       }
       if (table === "evaluations") {
@@ -349,7 +556,7 @@ describe("POST /api/jobs/[id]/evaluate", () => {
       }
       if (table === "profiles") {
         return createMockQueryBuilder({
-          single: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
         });
       }
       if (table === "stories") {

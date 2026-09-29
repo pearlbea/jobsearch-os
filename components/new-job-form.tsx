@@ -19,6 +19,7 @@ export default function NewJobForm({ userId }: { userId: string }) {
   const [roleTitle, setRoleTitle] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [jobUrl, setJobUrl] = useState("");
+  const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,6 +40,7 @@ export default function NewJobForm({ userId }: { userId: string }) {
           role_title: roleTitle.trim(),
           company_name: companyName.trim(),
           job_url: jobUrl.trim() || null,
+          raw_description: description.trim() ? description : null,
         })
         .select("id")
         .single();
@@ -63,7 +65,8 @@ export default function NewJobForm({ userId }: { userId: string }) {
           Add New Job
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          You can add the job description and evaluate it on the next page.
+          After adding it, you can fill in more details and evaluate the job
+          against your resume.
         </p>
       </div>
 
@@ -113,6 +116,19 @@ export default function NewJobForm({ userId }: { userId: string }) {
             value={jobUrl}
             onChange={(e) => setJobUrl(e.target.value)}
             className={inputClass}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className={labelClass} htmlFor="new-job-raw_description">
+            Job Description (optional, but needed to evaluate)
+          </label>
+          <textarea
+            id="new-job-raw_description"
+            rows={10}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Paste the job posting here"
+            className="w-full px-3.5 py-3 border border-[#E2DACB] rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
           />
         </div>
       </div>

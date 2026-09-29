@@ -12,10 +12,14 @@ interface RailShellProps {
 }
 
 const NAV_ITEMS: Array<{ label: string; href: string }> = [
-  { label: "Tracker", href: "/tracker" }, 
-  { label: "Evaluate", href: "/evaluator" },
+  { label: "Tracker", href: "/tracker" },
   { label: "Profile", href: "/profile" },
 ];
+
+// Active on the item's page and anything under it (e.g. /tracker/<job>).
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function RailShell({ userEmail, children }: RailShellProps) {
   const pathname = usePathname();
@@ -35,7 +39,7 @@ export function RailShell({ userEmail, children }: RailShellProps) {
         </div>
         <div className="flex gap-1.5 overflow-x-auto">
           {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = isActivePath(pathname, item.href);
             const className = cn(
               "shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold",
               isActive
@@ -63,7 +67,7 @@ export function RailShell({ userEmail, children }: RailShellProps) {
           </Link>
           <nav className="flex flex-col gap-0.5">
             {NAV_ITEMS.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = isActivePath(pathname, item.href);
               const className = cn(
                 "flex items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-[13.5px]",
                 isActive

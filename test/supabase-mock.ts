@@ -18,6 +18,7 @@ export function createMockQueryBuilder(overrides: Record<string, unknown> = {}) 
     limit: vi.fn().mockReturnThis(),
     upsert: vi.fn().mockResolvedValue({ error: null }),
     single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
     ...overrides,
   };
 }

@@ -37,7 +37,28 @@ describe("NewJobForm", () => {
       role_title: "Staff Engineer",
       company_name: "Acme",
       job_url: null,
+      raw_description: null,
     });
+  });
+
+  it("saves a pasted job description as-is", async () => {
+    const user = userEvent.setup();
+    render(<NewJobForm userId="user-123" />);
+
+    await user.type(screen.getByLabelText("Role Title"), "Staff Engineer");
+    await user.type(screen.getByLabelText("Company Name"), "Acme");
+    await user.type(
+      screen.getByLabelText(/Job Description/),
+      "  About the role:{enter}Build things.",
+    );
+    await user.click(screen.getByRole("button", { name: "Add Job" }));
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalled());
+    expect(mockSupabase.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        raw_description: "  About the role:\nBuild things.",
+      }),
+    );
   });
 
   it("rejects a role title or company that's only whitespace", async () => {
