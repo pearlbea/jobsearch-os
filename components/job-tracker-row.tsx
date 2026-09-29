@@ -40,16 +40,14 @@ export default function JobTrackerRow({ job }: { job: Job }) {
     <li className="flex items-center gap-4 p-4">
       <Link
         href={`/tracker/${job.id}`}
-        className="flex-1 flex gap-4 text-left"
+        className="flex-1 flex gap-4 text-left px-3.5 py-2 border border-[#E2DACB] rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary"
       >
-        <ul className="flex gap-1">
-          <li>{job.role_title}</li>
-          <li className="font-bold">{job.company_name}</li>
-          <li>{job.status ? STATUS_LABELS[job.status] : "No status"}</li>
+        <ul className="flex justify-between w-full gap-1">
           <li>
-            {job.match_score === null ? "Not evaluated" : `${job.match_score}%`}
+            {job.role_title},{" "}
+            <span className="font-bold">{job.company_name}</span>
           </li>
-          <li>{new Date(job.created_at).toLocaleDateString()}</li>
+          <li>{job.status ? STATUS_LABELS[job.status] : "No status"}</li>
         </ul>
       </Link>
       {error && (

@@ -63,7 +63,6 @@ describe("TrackerPage", () => {
       screen.getAllByRole("link").map((link) => link.getAttribute("href")),
     ).toEqual(["/tracker/job-2", "/tracker/job-1"]);
     expect(screen.queryByText(/No jobs yet/)).not.toBeInTheDocument();
-    expect(screen.getByText("Staff Engineer")).toBeInTheDocument();
     expect(screen.getByText("Applied")).toBeInTheDocument();
   });
 

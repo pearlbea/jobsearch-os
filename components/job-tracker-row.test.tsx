@@ -25,26 +25,26 @@ describe("JobTrackerRow", () => {
     vi.unstubAllGlobals();
   });
 
-  it("links to the job and shows the status label and score", () => {
+  it("links to the job and shows the status label", () => {
     renderRow();
 
     expect(
       screen.getByRole("link", { name: /Engineering Manager/ }),
     ).toHaveAttribute("href", "/tracker/job-1");
     expect(screen.getByText("Outreach Sent")).toBeInTheDocument();
-    expect(screen.getByText("82%")).toBeInTheDocument();
   });
 
   it("shows placeholders when the job has no status or evaluation", () => {
     renderRow(makeJob({ status: null, match_score: null }));
 
     expect(screen.getByText("No status")).toBeInTheDocument();
-    expect(screen.getByText("Not evaluated")).toBeInTheDocument();
   });
 
   it("deletes the job after confirming and refreshes the list", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({}) });
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
     renderRow();
@@ -57,9 +57,13 @@ describe("JobTrackerRow", () => {
 
     await waitFor(() => expect(mockRefresh).toHaveBeenCalled());
     expect(window.confirm).toHaveBeenCalledWith(
-      expect.stringContaining("evaluations and interactions will be deleted too"),
+      expect.stringContaining(
+        "evaluations and interactions will be deleted too",
+      ),
     );
-    expect(fetchMock).toHaveBeenCalledWith("/api/jobs/job-1", { method: "DELETE" });
+    expect(fetchMock).toHaveBeenCalledWith("/api/jobs/job-1", {
+      method: "DELETE",
+    });
   });
 
   it("does not delete when the confirm is dismissed", async () => {
@@ -78,7 +82,10 @@ describe("JobTrackerRow", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({ ok: false, json: async () => ({ error: "Not found" }) }),
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({ error: "Not found" }),
+      }),
     );
     const user = userEvent.setup();
     renderRow();

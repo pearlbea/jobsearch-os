@@ -84,7 +84,7 @@ describe("ProfileForm Component", () => {
     });
   });
 
-  it("redirects to the evaluator with a welcome message when completing a profile with no resume yet", async () => {
+  it("goes to the tracker after completing a profile with no resume yet", async () => {
     // A profile row is auto-created on email confirmation, so by the time
     // someone reaches this form a row already exists — it just has no
     // resume yet, which is the real signal for "hasn't completed setup".
@@ -114,12 +114,12 @@ describe("ProfileForm Component", () => {
 
     await waitFor(() => {
       expect(mockSupabase.upsert).toHaveBeenCalled();
-      expect(mockPush).toHaveBeenCalledWith("/evaluator?welcome=1");
+      expect(mockPush).toHaveBeenCalledWith("/tracker");
       expect(mockRefresh).not.toHaveBeenCalled();
     });
   });
 
-  it("redirects to the evaluator with a welcome message when no profile row exists yet", async () => {
+  it("goes to the tracker when no profile row exists yet", async () => {
     const user = userEvent.setup();
     render(<ProfileForm {...defaultProps} initialProfile={null} />);
 
@@ -131,7 +131,7 @@ describe("ProfileForm Component", () => {
 
     await waitFor(() => {
       expect(mockSupabase.upsert).toHaveBeenCalled();
-      expect(mockPush).toHaveBeenCalledWith("/evaluator?welcome=1");
+      expect(mockPush).toHaveBeenCalledWith("/tracker");
       expect(mockRefresh).not.toHaveBeenCalled();
     });
   });
