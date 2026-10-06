@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/tooltip";
 import Link from "next/link";
 import { bandStyles, getScoreBand } from "@/lib/score-band";
+import { cn } from "@/lib/utils";
 import { SCORE_DIMENSIONS } from "@/lib/score-dimensions";
 
 interface EvaluationCardProps {
@@ -69,22 +70,15 @@ export function EvaluationCard({
           <div />
         )}
         <div
-          className="text-center rounded-xl px-5.5 py-3 min-w-[100px] shrink-0"
-          style={{
-            background: badge.badgeBg,
-            border: `1px solid ${badge.badgeColor}33`,
-          }}
+          className={cn(
+            "text-center rounded-xl border px-5.5 py-3 min-w-[100px] shrink-0",
+            badge.badgeClassName,
+          )}
         >
-          <div
-            className="text-[10px] font-bold tracking-wide mb-1"
-            style={{ color: badge.badgeColor }}
-          >
+          <div className="text-[10px] font-bold tracking-wide mb-1">
             OVERALL
           </div>
-          <div
-            className="text-2xl font-extrabold leading-none"
-            style={{ color: badge.badgeColor }}
-          >
+          <div className="text-2xl font-extrabold leading-none">
             {badge.label}
           </div>
         </div>
@@ -122,17 +116,14 @@ export function EvaluationCard({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         <div>
-          <h4
-            className="text-[13px] font-bold mb-3"
-            style={{ color: "#1E7A4C" }}
-          >
+          <h4 className="text-[13px] font-bold mb-3 text-band-good">
             Key Matching Strengths
           </h4>
           <ul className="flex flex-col gap-2.5 text-sm text-muted-foreground-strong leading-relaxed">
             {key_strengths?.length ? (
               key_strengths.map((strength, idx) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <span style={{ color: "#1E7A4C" }} className="mt-0.5">
+                  <span className="mt-0.5 text-band-good">
                     ●
                   </span>
                   <span>{strength}</span>
@@ -147,17 +138,14 @@ export function EvaluationCard({
         </div>
 
         <div>
-          <h4
-            className="text-[13px] font-bold mb-3"
-            style={{ color: "#9D681B" }}
-          >
+          <h4 className="text-[13px] font-bold mb-3 text-band-stretch-bar">
             Potential Gaps / Friction Areas
           </h4>
           <ul className="flex flex-col gap-2.5 text-sm text-muted-foreground-strong leading-relaxed">
             {potential_gaps?.length ? (
               potential_gaps.map((gap, idx) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <span style={{ color: "#9D681B" }} className="mt-0.5">
+                  <span className="mt-0.5 text-band-stretch-bar">
                     ●
                   </span>
                   <span>{gap}</span>
@@ -202,7 +190,6 @@ function ScoreBar({
   description: string;
 }) {
   const band = typeof score === "number" ? bandStyles[getScoreBand(score)] : null;
-  const color = band ? band.barColor : "var(--muted-foreground)";
 
   return (
     <div className="bg-background rounded-[10px] px-4 py-3.5">
@@ -218,14 +205,22 @@ function ScoreBar({
             {description}
           </TooltipContent>
         </Tooltip>
-        <span className="font-bold" style={{ color }}>
+        <span
+          className={cn(
+            "font-bold",
+            band ? band.barTextClassName : "text-muted-foreground",
+          )}
+        >
           {band ? band.shortLabel : "N/A"}
         </span>
       </div>
       <div className="h-1.5 rounded-full bg-border overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-300"
-          style={{ width: band ? `${score}%` : "0%", background: color }}
+          className={cn(
+            "h-full rounded-full transition-all duration-300",
+            band?.barClassName,
+          )}
+          style={{ width: band ? `${score}%` : "0%" }}
         />
       </div>
     </div>

@@ -5,56 +5,46 @@ export interface BandStyle {
   label: string;
   /** One-word form for a single breakdown dimension. */
   shortLabel: string;
-  /** Hex values for the score badge, where Tailwind tokens don't apply. */
-  badgeBg: string;
-  badgeColor: string;
-  /** Hex value for individual breakdown bars (label text + fill). */
-  barColor: string;
+  /** Fill, text, and border for a badge (add `border` for the width). */
+  badgeClassName: string;
+  /** Fill for a breakdown bar. */
+  barClassName: string;
+  /** Text in the bar's color, for the label beside it. */
+  barTextClassName: string;
 }
 
-// Badge colors for each band live here. components/ui/badge.tsx's band
-// variants read badgeBg/badgeColor from this map directly (rather than their
-// own Tailwind classes), so a band renders identically whether it's this
-// Badge component (list rows) or the inline styles used elsewhere (main
-// score badge, landing page preview).
+// Colors are the --band-* variables in app/globals.css. Class names are
+// written out in full so Tailwind can find them.
 export const bandStyles: Record<ScoreBand, BandStyle> = {
   poor: {
     label: "Poor fit",
     shortLabel: "Poor",
-    badgeBg: "#FDECEC",
-    badgeColor: "#C0392B",
-    barColor: "#C0392B",
+    badgeClassName: "bg-band-poor-bg text-band-poor border-band-poor/20",
+    barClassName: "bg-band-poor-bar",
+    barTextClassName: "text-band-poor-bar",
   },
   stretch: {
     label: "Stretch",
     shortLabel: "Stretch",
-    badgeBg: "#FEF3C7",
-    badgeColor: "#92400E",
-    barColor: "#9D681B",
+    badgeClassName: "bg-band-stretch-bg text-band-stretch border-band-stretch/20",
+    barClassName: "bg-band-stretch-bar",
+    barTextClassName: "text-band-stretch-bar",
   },
   good: {
     label: "Good fit",
     shortLabel: "Good",
-    badgeBg: "#EAF7EF",
-    badgeColor: "#1E7A4C",
-    barColor: "#1E7A4C",
+    badgeClassName: "bg-band-good-bg text-band-good border-band-good/20",
+    barClassName: "bg-band-good-bar",
+    barTextClassName: "text-band-good-bar",
   },
-  // Filled rather than tinted, so it reads as a step above "good".
   strong: {
     label: "Strong fit",
     shortLabel: "Strong",
-    badgeBg: "#1E7A4C",
-    badgeColor: "#FFFFFF",
-    barColor: "#155C39",
+    badgeClassName: "bg-band-strong-bg text-band-strong border-band-strong/20",
+    barClassName: "bg-band-strong-bar",
+    barTextClassName: "text-band-strong-bar",
   },
 };
-
-export const SCORE_BANDS: readonly ScoreBand[] = [
-  "poor",
-  "stretch",
-  "good",
-  "strong",
-];
 
 // The numeric score is still computed and stored, but the UI only shows its
 // band: run-to-run variation is a few points (see `npm run eval`), so the

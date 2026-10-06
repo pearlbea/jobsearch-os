@@ -40,6 +40,18 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-band-poor: var(--band-poor);
+  --color-band-poor-bg: var(--band-poor-bg);
+  --color-band-poor-bar: var(--band-poor-bar);
+  --color-band-stretch: var(--band-stretch);
+  --color-band-stretch-bg: var(--band-stretch-bg);
+  --color-band-stretch-bar: var(--band-stretch-bar);
+  --color-band-good: var(--band-good);
+  --color-band-good-bg: var(--band-good-bg);
+  --color-band-good-bar: var(--band-good-bar);
+  --color-band-strong: var(--band-strong);
+  --color-band-strong-bg: var(--band-strong-bg);
+  --color-band-strong-bar: var(--band-strong-bar);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -83,6 +95,20 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Fit bands (lib/score-band.ts): badge text, badge fill, breakdown bar. */
+  --band-poor: #c0392b;
+  --band-poor-bg: #fdecec;
+  --band-poor-bar: #c0392b;
+  --band-stretch: #92400e;
+  --band-stretch-bg: #fef3c7;
+  --band-stretch-bar: #9d681b;
+  --band-good: #1e7a4c;
+  --band-good-bg: #eaf7ef;
+  --band-good-bar: #1e7a4c;
+  /* Filled rather than tinted, so it reads as a step above "good". */
+  --band-strong: #ffffff;
+  --band-strong-bg: #1e7a4c;
+  --band-strong-bar: #155c39;
 }
 
 .dark {

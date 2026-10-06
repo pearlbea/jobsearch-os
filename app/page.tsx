@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { RailShell } from "@/components/rail-shell";
 import { bandStyles, getScoreBand } from "@/lib/score-band";
+import { cn } from "@/lib/utils";
 
 const PREVIEW_BARS = [
   { label: "Technical Match", value: 60 },
@@ -61,21 +62,17 @@ export default async function Home() {
                   <div className="text-[13px] font-bold text-foreground">
                     Software Developer
                   </div>
-                  <div className="text-xs text-[#6B7280]">
+                  <div className="text-xs text-muted-foreground">
                     Tulsa City-County Library
                   </div>
                 </div>
                 <div
-                  className="text-center rounded-lg px-3 py-1.5"
-                  style={{
-                    background: PREVIEW_OVERALL.badgeBg,
-                    border: `1px solid ${PREVIEW_OVERALL.badgeColor}33`,
-                  }}
+                  className={cn(
+                    "text-center rounded-lg border px-3 py-1.5",
+                    PREVIEW_OVERALL.badgeClassName,
+                  )}
                 >
-                  <div
-                    className="text-[15px] font-extrabold leading-none"
-                    style={{ color: PREVIEW_OVERALL.badgeColor }}
-                  >
+                  <div className="text-[15px] font-extrabold leading-none">
                     {PREVIEW_OVERALL.label}
                   </div>
                 </div>
@@ -84,17 +81,14 @@ export default async function Home() {
                 const band = bandStyles[getScoreBand(bar.value)];
                 return (
                   <div key={bar.label} className="mb-2.5">
-                    <div className="flex justify-between text-[11px] text-[#6B7280] mb-1">
+                    <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
                       <span>{bar.label}</span>
                       <span>{band.shortLabel}</span>
                     </div>
-                    <div className="h-[5px] bg-[#F1F2F4] rounded-full overflow-hidden">
+                    <div className="h-[5px] bg-border rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${bar.value}%`,
-                          background: band.barColor,
-                        }}
+                        className={cn("h-full rounded-full", band.barClassName)}
+                        style={{ width: `${bar.value}%` }}
                       />
                     </div>
                   </div>
