@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "eval": "vitest run --config vitest.eval.config.mts"
+    "eval": "vitest run --config vitest.eval.config.mts",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.37",
