@@ -35,5 +35,10 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      # Doesn't need Supabase or Anthropic env vars; catches build-only errors.
+      # Catches build-only errors. Prerendering /login creates a Supabase
+      # client, which only checks that these are set (no network calls), so
+      # placeholders are enough; the build output is thrown away.
       - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-publishable-key
