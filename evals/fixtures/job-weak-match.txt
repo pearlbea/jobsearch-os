@@ -1,0 +1,20 @@
+Senior Embedded Firmware Engineer - Halden Automotive
+
+Halden Automotive designs electronic control units (ECUs) for electric
+vehicle battery management systems.
+
+Responsibilities
+- Develop and maintain safety-critical firmware in C and C++ for ARM
+  Cortex-M microcontrollers running FreeRTOS.
+- Implement CAN bus and LIN communication stacks.
+- Bring up new boards with hardware engineers using oscilloscopes, logic
+  analyzers, and JTAG debuggers.
+- Produce ISO 26262 (ASIL-C) safety documentation and MISRA C compliant code.
+
+Requirements
+- 6+ years of embedded C development on bare-metal or RTOS targets.
+- Hands-on experience with automotive communication protocols (CAN, LIN).
+- Experience working to ISO 26262 or similar functional safety standards.
+- Degree in Electrical Engineering, Computer Engineering, or similar.
+
+Halden Automotive is an equal opportunity employer.

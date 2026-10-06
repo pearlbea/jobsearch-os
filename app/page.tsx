@@ -4,12 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { RailShell } from "@/components/rail-shell";
+import { bandStyles, getScoreBand } from "@/lib/score-band";
 
 const PREVIEW_BARS = [
-  { label: "Technical Match", value: 40, color: "#B7791F" },
-  { label: "Domain Match", value: 20, color: "#C0392B" },
-  { label: "Leadership / Scope", value: 25, color: "#C0392B" },
+  { label: "Technical Match", value: 60 },
+  { label: "Domain Match", value: 20 },
+  { label: "Leadership / Scope", value: 30 },
 ];
+const PREVIEW_OVERALL = bandStyles[getScoreBand(37)];
 
 export default async function Home() {
   const supabase = await createClient();
@@ -49,7 +51,7 @@ export default async function Home() {
               <p className="text-base text-muted-foreground-strong leading-relaxed">
                 JobFit Scorecard evaluates your resume against any job posting
                 to score your fit and flag gaps. Identify high-fit roles, tailor
-                your resume with confidence, and pass ATS filters.
+                your resume with confidence, and spot the keywords it&apos;s missing.
               </p>
             </div>
 
@@ -63,26 +65,41 @@ export default async function Home() {
                     Tulsa City-County Library
                   </div>
                 </div>
-                <div className="text-center bg-[#FDECEC] border border-[#F7C9C9] rounded-lg px-3 py-1.5">
-                  <div className="text-[15px] font-extrabold text-[#C0392B] leading-none">
-                    32%
+                <div
+                  className="text-center rounded-lg px-3 py-1.5"
+                  style={{
+                    background: PREVIEW_OVERALL.badgeBg,
+                    border: `1px solid ${PREVIEW_OVERALL.badgeColor}33`,
+                  }}
+                >
+                  <div
+                    className="text-[15px] font-extrabold leading-none"
+                    style={{ color: PREVIEW_OVERALL.badgeColor }}
+                  >
+                    {PREVIEW_OVERALL.label}
                   </div>
                 </div>
               </div>
-              {PREVIEW_BARS.map((bar) => (
-                <div key={bar.label} className="mb-2.5">
-                  <div className="flex justify-between text-[11px] text-[#6B7280] mb-1">
-                    <span>{bar.label}</span>
-                    <span>{bar.value}%</span>
+              {PREVIEW_BARS.map((bar) => {
+                const band = bandStyles[getScoreBand(bar.value)];
+                return (
+                  <div key={bar.label} className="mb-2.5">
+                    <div className="flex justify-between text-[11px] text-[#6B7280] mb-1">
+                      <span>{bar.label}</span>
+                      <span>{band.shortLabel}</span>
+                    </div>
+                    <div className="h-[5px] bg-[#F1F2F4] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${bar.value}%`,
+                          background: band.barColor,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-[5px] bg-[#F1F2F4] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${bar.value}%`, background: bar.color }}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

@@ -1,0 +1,22 @@
+Director of Engineering, Frontend Platform - Corvid Pay
+
+Corvid Pay builds checkout and payout infrastructure for online merchants.
+We're hiring a Director of Engineering to lead our frontend organization.
+
+What you'll do
+- Lead the frontend organization: 4 engineering managers and roughly 40
+  engineers across the merchant dashboard, hosted checkout, and design system
+  teams.
+- Own the organization's headcount plan, hiring, and a multi-million-dollar
+  annual budget.
+- Set the multi-year technical strategy for our React, TypeScript, and
+  Next.js platform, including our GraphQL client architecture.
+- Represent frontend engineering at the executive staff level and partner with
+  VPs of Product and Design on roadmap planning.
+- Grow managers: coach, run calibration, and build career ladders.
+
+What you bring
+- 12+ years in software engineering, including 5+ years managing managers.
+- Deep hands-on background in React and TypeScript.
+- Experience in payments or other regulated fintech products.
+- A record of scaling an engineering organization through rapid growth.

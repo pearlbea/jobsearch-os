@@ -1,0 +1,26 @@
+Senior Frontend Engineer, Payments - Corvid Pay
+
+Corvid Pay builds checkout and payout infrastructure for online merchants.
+We're hiring a Senior Frontend Engineer to own the merchant dashboard and
+hosted checkout experience.
+
+What you'll do
+- Build and ship features across our hosted checkout and merchant dashboard
+  using React, TypeScript, and Next.js.
+- Design GraphQL queries and client-side caching for data-heavy views.
+- Raise the quality bar: unit tests with Jest, end-to-end tests with
+  Playwright, and accessibility (WCAG 2.1 AA).
+- Work with compliance on PCI-DSS requirements for card-entry flows.
+- Mentor other engineers and lead small feature squads.
+
+What you bring
+- 5+ years of professional frontend experience with React and TypeScript.
+- Experience in payments, banking, or other regulated fintech products.
+- A track record of leading features end to end with a small team.
+
+Nice to have
+- Experience with design systems and Storybook.
+
+Corvid Pay is an equal opportunity employer. We make employment decisions
+without regard to race, color, religion, sex, national origin, age,
+disability, or veteran status.

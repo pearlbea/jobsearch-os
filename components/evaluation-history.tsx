@@ -3,7 +3,7 @@
 import { Evaluation } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getScoreBand } from "@/lib/score-band";
+import { bandStyles, getScoreBand } from "@/lib/score-band";
 
 interface EvaluationHistoryProps {
   evaluations: Evaluation[];
@@ -27,12 +27,7 @@ export function EvaluationHistory({
       <div className="divide-y divide-[#F3EEE4]">
         {evaluations.map((evaluation, idx) => {
           const isSelected = evaluation.id === selectedEvaluationId;
-          const score = evaluation.match_score;
-          const band = getScoreBand(score);
-          // evaluations are newest first, so the previous run is the next item
-          const previousScore = evaluations[idx + 1]?.match_score;
-          const delta =
-            previousScore === undefined ? null : score - previousScore;
+          const band = getScoreBand(evaluation.match_score);
 
           return (
             <div
@@ -53,18 +48,7 @@ export function EvaluationHistory({
                   <span className="font-bold text-foreground text-sm leading-snug">
                     {idx === 0 ? "Latest" : `Evaluation ${evaluations.length - idx}`}
                   </span>
-                  <div className="flex items-center gap-1.5">
-                    {delta !== null && delta !== 0 && (
-                      <span
-                        className={`text-[11px] font-bold ${
-                          delta > 0 ? "text-[#1E7A4C]" : "text-[#C0392B]"
-                        }`}
-                      >
-                        {delta > 0 ? `+${delta}` : delta}
-                      </span>
-                    )}
-                    <Badge variant={band}>{score}%</Badge>
-                  </div>
+                  <Badge variant={band}>{bandStyles[band].label}</Badge>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
                   {new Date(evaluation.created_at).toLocaleString()}

@@ -76,16 +76,16 @@ export function EvaluationCard({
           }}
         >
           <div
+            className="text-[10px] font-bold tracking-wide mb-1"
+            style={{ color: badge.badgeColor }}
+          >
+            OVERALL
+          </div>
+          <div
             className="text-2xl font-extrabold leading-none"
             style={{ color: badge.badgeColor }}
           >
-            {matchScore}%
-          </div>
-          <div
-            className="text-[10px] font-bold tracking-wide mt-1"
-            style={{ color: badge.badgeColor }}
-          >
-            MATCH SCORE
+            {badge.label}
           </div>
         </div>
       </div>
@@ -201,10 +201,8 @@ function ScoreBar({
   score: number | undefined;
   description: string;
 }) {
-  const hasScore = typeof score === "number";
-  const color = hasScore
-    ? bandStyles[getScoreBand(score)].barColor
-    : "var(--muted-foreground)";
+  const band = typeof score === "number" ? bandStyles[getScoreBand(score)] : null;
+  const color = band ? band.barColor : "var(--muted-foreground)";
 
   return (
     <div className="bg-background rounded-[10px] px-4 py-3.5">
@@ -221,13 +219,13 @@ function ScoreBar({
           </TooltipContent>
         </Tooltip>
         <span className="font-bold" style={{ color }}>
-          {hasScore ? `${score}%` : "N/A"}
+          {band ? band.shortLabel : "N/A"}
         </span>
       </div>
       <div className="h-1.5 rounded-full bg-border overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-300"
-          style={{ width: hasScore ? `${score}%` : "0%", background: color }}
+          style={{ width: band ? `${score}%` : "0%", background: color }}
         />
       </div>
     </div>
