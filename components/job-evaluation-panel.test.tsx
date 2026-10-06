@@ -69,7 +69,7 @@ describe("JobEvaluationPanel", () => {
     expect(screen.queryByLabelText("Tailored Resume")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Evaluate" }));
 
-    expect(await screen.findByText("64%")).toBeInTheDocument();
+    expect(await screen.findByText("Stretch")).toBeInTheDocument();
     expect(screen.getByText("Tailored advice.")).toBeInTheDocument();
     // Choosing the profile resume clears any tailored one on the job.
     expect(mockSupabase.update).toHaveBeenCalledWith({ tailored_resume: null });
@@ -183,7 +183,7 @@ describe("JobEvaluationPanel", () => {
       "You've reached the limit of 5 evaluations for this demo.",
     );
     expect(screen.getByRole("button", { name: "Evaluate" })).toBeEnabled();
-    expect(screen.queryByText("64%")).not.toBeInTheDocument();
+    expect(screen.queryByText("Stretch")).not.toBeInTheDocument();
   });
 
   it("doesn't evaluate when saving the resume choice fails", async () => {

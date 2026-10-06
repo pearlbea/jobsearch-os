@@ -126,7 +126,8 @@ export interface EvaluationSummary {
   ats_analysis?: {
     missing_exact_keywords: string[];
     formatting_warnings: string[];
-    ats_pass_probability: "High" | "Medium" | "Low";
+    // Older evaluations also stored an `ats_pass_probability` here; it's no
+    // longer generated or shown (the model can't know an employer's ATS).
   };
 }
 

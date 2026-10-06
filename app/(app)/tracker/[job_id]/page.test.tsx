@@ -110,7 +110,7 @@ describe("JobPage", () => {
     render(await JobPage(props()));
 
     expect(screen.getByRole("heading", { name: "Evaluation" })).toBeInTheDocument();
-    expect(screen.getByText("82%")).toBeInTheDocument();
+    expect(screen.getByText("Good fit")).toBeInTheDocument();
     expect(screen.getByText("Lead with platform work.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Re-evaluate" })).toBeEnabled();
     // The profile has a resume, so it's offered as the default.
@@ -123,7 +123,7 @@ describe("JobPage", () => {
     render(await JobPage(props()));
 
     expect(screen.getByRole("button", { name: "Evaluate" })).toBeEnabled();
-    expect(screen.queryByText("82%")).not.toBeInTheDocument();
+    expect(screen.queryByText("Good fit")).not.toBeInTheDocument();
   });
 
   it("asks for a resume when the user has no profile row yet", async () => {

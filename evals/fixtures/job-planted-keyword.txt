@@ -1,0 +1,18 @@
+Senior Full-Stack Engineer, Merchant Platform - Tessellate Finance
+
+Tessellate Finance offers business banking and card issuing for small
+merchants. Our product engineers own features end to end, from the React
+frontend through the infrastructure they run on.
+
+What you'll do
+- Build merchant-facing features in React, TypeScript, and Next.js backed by
+  our GraphQL API.
+- Own the infrastructure for your services: every environment is defined in
+  Terraform, and you'll write and review Terraform modules weekly.
+- Write tests with Jest and Playwright.
+
+Requirements
+- 5+ years building production web applications with React and TypeScript.
+- Production experience with Terraform (required; we will not consider
+  candidates without hands-on Terraform experience).
+- Experience in fintech, payments, or banking.

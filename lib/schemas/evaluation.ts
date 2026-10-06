@@ -30,9 +30,6 @@ export const compactEvaluationSchema = z.object({
       .describe(
         "Any structural or clarity issues in the resume text (e.g. non-standard job titles, missing dates)",
       ),
-    ats_pass_probability: z
-      .enum(["High", "Medium", "Low"])
-      .describe("Likelihood of passing an automated ATS keyword filter"),
   }),
   strengths: z
     .array(z.string())

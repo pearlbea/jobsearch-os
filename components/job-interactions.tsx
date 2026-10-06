@@ -22,7 +22,7 @@ const NEW_FORM = "new";
 const labelClass =
   "block text-[13px] font-semibold text-muted-foreground-strong mb-1.5";
 const inputClass =
-  "w-full px-3.5 py-2 border border-[#E2DACB] rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary";
+  "w-full px-3.5 py-2 border border-input rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary";
 
 // Newest first, with unscheduled (null occurred_at) at the top, matches the
 // page's server-side ordering so adds/edits land where a reload would put them.
@@ -190,7 +190,7 @@ function InteractionForm({
         <textarea
           rows={4}
           placeholder="Prep, questions asked, how it went"
-          className="w-full px-3.5 py-3 border border-[#E2DACB] rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
+          className="w-full px-3.5 py-3 border border-input rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
           {...field("notes")}
         />
       </div>
@@ -280,7 +280,7 @@ export default function JobInteractions({
   return (
     <section
       aria-labelledby="interactions-heading"
-      className="max-w-3xl mx-auto mt-8 p-8 space-y-6 bg-card border border-border rounded-2xl shadow-[0_6px_20px_rgba(60,45,20,0.05)]"
+      className="max-w-3xl mx-auto mt-8 p-8 space-y-6 bg-card border border-border rounded-2xl shadow-card"
     >
       <div className="flex items-center justify-between gap-4">
         <h2

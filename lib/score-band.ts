@@ -1,48 +1,58 @@
-export type ScoreBand = "low" | "medium" | "high";
+export type ScoreBand = "poor" | "stretch" | "good" | "strong";
 
 export interface BandStyle {
+  /** Overall fit label, e.g. on the main badge and in evaluation history. */
   label: string;
-  /** Hex values for the score badge, where Tailwind tokens don't apply. */
-  badgeBg: string;
-  badgeColor: string;
-  /** Hex value for individual breakdown bars (label text + fill). */
-  barColor: string;
+  /** One-word form for a single breakdown dimension. */
+  shortLabel: string;
+  /** Fill, text, and border for a badge (add `border` for the width). */
+  badgeClassName: string;
+  /** Fill for a breakdown bar. */
+  barClassName: string;
+  /** Text in the bar's color, for the label beside it. */
+  barTextClassName: string;
 }
 
-// Badge colors for each band live here. components/ui/badge.tsx's
-// low/medium/high variants read badgeBg/badgeColor from this map directly
-// (rather than their own Tailwind classes), so a band renders identically
-// whether it's this Badge component (list rows) or the inline styles used
-// elsewhere (main score badge, ATS status pill).
+// Colors are the --band-* variables in app/globals.css. Class names are
+// written out in full so Tailwind can find them.
 export const bandStyles: Record<ScoreBand, BandStyle> = {
-  low: {
-    label: "Low fit",
-    badgeBg: "#FDECEC",
-    badgeColor: "#C0392B",
-    barColor: "#C0392B",
+  poor: {
+    label: "Poor fit",
+    shortLabel: "Poor",
+    badgeClassName: "bg-band-poor-bg text-band-poor border-band-poor/20",
+    barClassName: "bg-band-poor-bar",
+    barTextClassName: "text-band-poor-bar",
   },
-  medium: {
-    label: "Medium fit",
-    badgeBg: "#FEF3C7",
-    badgeColor: "#92400E",
-    barColor: "#9D681B",
+  stretch: {
+    label: "Stretch",
+    shortLabel: "Stretch",
+    badgeClassName: "bg-band-stretch-bg text-band-stretch border-band-stretch/20",
+    barClassName: "bg-band-stretch-bar",
+    barTextClassName: "text-band-stretch-bar",
   },
-  high: {
-    label: "High fit",
-    badgeBg: "#EAF7EF",
-    badgeColor: "#1E7A4C",
-    barColor: "#1E7A4C",
+  good: {
+    label: "Good fit",
+    shortLabel: "Good",
+    badgeClassName: "bg-band-good-bg text-band-good border-band-good/20",
+    barClassName: "bg-band-good-bar",
+    barTextClassName: "text-band-good-bar",
+  },
+  strong: {
+    label: "Strong fit",
+    shortLabel: "Strong",
+    badgeClassName: "bg-band-strong-bg text-band-strong border-band-strong/20",
+    barClassName: "bg-band-strong-bar",
+    barTextClassName: "text-band-strong-bar",
   },
 };
 
+// The numeric score is still computed and stored, but the UI only shows its
+// band: run-to-run variation is a few points (see `npm run eval`), so the
+// exact number implies precision it doesn't have. Cutoffs sit where the eval
+// fixtures' scores cluster away from them, so a re-run rarely flips the label.
 export function getScoreBand(score: number): ScoreBand {
-  if (score < 40) return "low";
-  if (score <= 70) return "medium";
-  return "high";
-}
-
-export function getAtsBand(passProbability: "High" | "Medium" | "Low"): ScoreBand {
-  if (passProbability === "High") return "high";
-  if (passProbability === "Medium") return "medium";
-  return "low";
+  if (score < 50) return "poor";
+  if (score < 70) return "stretch";
+  if (score < 85) return "good";
+  return "strong";
 }

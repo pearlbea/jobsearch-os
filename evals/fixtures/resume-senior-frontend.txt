@@ -1,0 +1,32 @@
+Jordan Rivera
+jordan.rivera@example.com | (555) 010-0199 | github.com/jrivera-example
+
+SUMMARY
+Senior frontend engineer with 7 years building customer-facing web apps in
+payments and consumer fintech. Deep in React and TypeScript; comfortable owning
+a feature from design review through production monitoring.
+
+EXPERIENCE
+
+Senior Frontend Engineer, Ledgerly (consumer payments app), 2021 - present
+- Led a squad of 3 engineers rebuilding the checkout and payouts flows in
+  React, TypeScript, and Next.js; cut checkout drop-off by 18%.
+- Designed the GraphQL schema and Apollo Client caching layer for the account
+  dashboard, used by 2M monthly active users.
+- Introduced Playwright end-to-end tests and raised Jest unit coverage on
+  payment flows from 40% to 85%.
+- Partnered with compliance on PCI-DSS and accessibility (WCAG 2.1 AA) audits.
+- Mentored 2 junior engineers through promotion.
+
+Frontend Engineer, Brightbank (digital banking), 2018 - 2021
+- Built the loan application wizard in React and Redux, later migrated to
+  TypeScript.
+- Created the shared component library (Storybook) used by 4 product teams.
+- Worked with the design team on a design-token system for theming.
+
+EDUCATION
+B.S. Computer Science, State University, 2018
+
+SKILLS
+React, TypeScript, JavaScript, Next.js, GraphQL, Apollo Client, Redux, Jest,
+Playwright, Storybook, CSS-in-JS, Tailwind CSS, WCAG accessibility, Node.js

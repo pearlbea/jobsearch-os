@@ -4,12 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { RailShell } from "@/components/rail-shell";
+import { bandStyles, getScoreBand } from "@/lib/score-band";
+import { cn } from "@/lib/utils";
 
 const PREVIEW_BARS = [
-  { label: "Technical Match", value: 40, color: "#B7791F" },
-  { label: "Domain Match", value: 20, color: "#C0392B" },
-  { label: "Leadership / Scope", value: 25, color: "#C0392B" },
+  { label: "Technical Match", value: 60 },
+  { label: "Domain Match", value: 20 },
+  { label: "Leadership / Scope", value: 30 },
 ];
+const PREVIEW_OVERALL = bandStyles[getScoreBand(37)];
 
 export default async function Home() {
   const supabase = await createClient();
@@ -49,44 +52,52 @@ export default async function Home() {
               <p className="text-base text-muted-foreground-strong leading-relaxed">
                 JobFit Scorecard evaluates your resume against any job posting
                 to score your fit and flag gaps. Identify high-fit roles, tailor
-                your resume with confidence, and pass ATS filters.
+                your resume with confidence, and spot the keywords it&apos;s missing.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_10px_28px_rgba(60,45,20,0.08)] -rotate-1">
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-card-lifted -rotate-1">
               <div className="flex justify-between items-center mb-3.5">
                 <div>
                   <div className="text-[13px] font-bold text-foreground">
                     Software Developer
                   </div>
-                  <div className="text-xs text-[#6B7280]">
+                  <div className="text-xs text-muted-foreground">
                     Tulsa City-County Library
                   </div>
                 </div>
-                <div className="text-center bg-[#FDECEC] border border-[#F7C9C9] rounded-lg px-3 py-1.5">
-                  <div className="text-[15px] font-extrabold text-[#C0392B] leading-none">
-                    32%
+                <div
+                  className={cn(
+                    "text-center rounded-lg border px-3 py-1.5",
+                    PREVIEW_OVERALL.badgeClassName,
+                  )}
+                >
+                  <div className="text-[15px] font-extrabold leading-none">
+                    {PREVIEW_OVERALL.label}
                   </div>
                 </div>
               </div>
-              {PREVIEW_BARS.map((bar) => (
-                <div key={bar.label} className="mb-2.5">
-                  <div className="flex justify-between text-[11px] text-[#6B7280] mb-1">
-                    <span>{bar.label}</span>
-                    <span>{bar.value}%</span>
+              {PREVIEW_BARS.map((bar) => {
+                const band = bandStyles[getScoreBand(bar.value)];
+                return (
+                  <div key={bar.label} className="mb-2.5">
+                    <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
+                      <span>{bar.label}</span>
+                      <span>{band.shortLabel}</span>
+                    </div>
+                    <div className="h-[5px] bg-border rounded-full overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full", band.barClassName)}
+                        style={{ width: `${bar.value}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-[5px] bg-[#F1F2F4] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${bar.value}%`, background: bar.color }}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card py-9 px-8 md:px-10 shadow-[0_6px_20px_rgba(60,45,20,0.06)] mb-6">
+          <div className="rounded-2xl border border-border bg-card py-9 px-8 md:px-10 shadow-card mb-6">
             <h2 className="text-[22px] font-extrabold tracking-tight mb-2 text-foreground">
               First, let&apos;s set up your profile
             </h2>
@@ -117,7 +128,7 @@ export default async function Home() {
           </div>
 
           <div className="flex gap-2 items-start px-1">
-            <TriangleAlert className="h-[15px] w-[15px] shrink-0 mt-0.5 text-[#BE854A]" />
+            <TriangleAlert className="h-[15px] w-[15px] shrink-0 mt-0.5 text-warning" />
             <p className="text-[13px] text-muted-foreground leading-relaxed">
               This is a demo with a limited token budget. Each user is limited
               to 5 evaluations. You are welcome to clone{" "}
@@ -146,7 +157,7 @@ export default async function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link
             href="/profile"
-            className="block rounded-2xl border border-border bg-card p-6 shadow-[0_6px_20px_rgba(60,45,20,0.05)] transition-colors hover:border-primary/40"
+            className="block rounded-2xl border border-border bg-card p-6 shadow-card transition-colors hover:border-primary/40"
           >
             <h2 className="text-lg font-bold text-foreground">Profile</h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -155,7 +166,7 @@ export default async function Home() {
           </Link>
           <Link
             href="/tracker"
-            className="block rounded-2xl border border-border bg-card p-6 shadow-[0_6px_20px_rgba(60,45,20,0.05)] transition-colors hover:border-primary/40"
+            className="block rounded-2xl border border-border bg-card p-6 shadow-card transition-colors hover:border-primary/40"
           >
             <h2 className="text-lg font-bold text-foreground">Job Tracker</h2>
             <p className="text-sm text-muted-foreground mt-1">

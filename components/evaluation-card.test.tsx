@@ -35,12 +35,12 @@ const baseJob = makeJob({
 });
 
 describe("EvaluationCard Component", () => {
-  it("displays the role, company, location, and overall match score", () => {
+  it("displays the role, company, location, and overall fit", () => {
     render(<EvaluationCard job={baseJob} evaluation={baseEvaluation} />);
 
     expect(screen.getByText("Engineering Manager")).toBeInTheDocument();
     expect(screen.getByText("Acme Corp")).toBeInTheDocument();
-    expect(screen.getByText("82%")).toBeInTheDocument();
+    expect(screen.getByText("Good fit")).toBeInTheDocument();
   });
 
   it("lists key strengths and potential gaps", () => {
@@ -61,12 +61,12 @@ describe("EvaluationCard Component", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the ATS filter simulation only when ats_analysis is present", () => {
+  it("renders the keyword match only when ats_analysis is present", () => {
     const { rerender } = render(
       <EvaluationCard job={baseJob} evaluation={baseEvaluation} />,
     );
     expect(
-      screen.queryByText(/ATS Filter Simulation/i),
+      screen.queryByRole("heading", { name: "Keyword match" }),
     ).not.toBeInTheDocument();
 
     rerender(
@@ -79,17 +79,37 @@ describe("EvaluationCard Component", () => {
             ats_analysis: {
               missing_exact_keywords: ["Kubernetes", "GraphQL"],
               formatting_warnings: [],
-              ats_pass_probability: "Medium",
             },
           },
         }}
       />,
     );
 
-    expect(screen.getByText(/ATS Filter Simulation/i)).toBeInTheDocument();
-    expect(screen.getByText("Medium ATS Pass Rate")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Keyword match" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/pass rate/i)).not.toBeInTheDocument();
     expect(screen.getByText("Kubernetes")).toBeInTheDocument();
     expect(screen.getByText("GraphQL")).toBeInTheDocument();
+  });
+
+  it("says so when no posting keywords are missing", () => {
+    render(
+      <EvaluationCard
+        job={baseJob}
+        evaluation={{
+          ...baseEvaluation,
+          evaluation_summary: {
+            ...baseEvaluationSummary,
+            ats_analysis: { missing_exact_keywords: [], formatting_warnings: [] },
+          },
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText("Every key term in the posting appears in your resume."),
+    ).toBeInTheDocument();
   });
 
   it("shows a re-evaluate button only when onReevaluate is provided, and reflects the loading state", () => {
@@ -136,7 +156,6 @@ describe("EvaluationCard Component", () => {
             ats_analysis: {
               missing_exact_keywords: ["Kubernetes"],
               formatting_warnings: [],
-              ats_pass_probability: "Low",
             },
           },
         }}
