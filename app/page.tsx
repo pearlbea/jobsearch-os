@@ -56,7 +56,7 @@ export default async function Home() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_10px_28px_rgba(60,45,20,0.08)] -rotate-1">
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-card-lifted -rotate-1">
               <div className="flex justify-between items-center mb-3.5">
                 <div>
                   <div className="text-[13px] font-bold text-foreground">
@@ -97,7 +97,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card py-9 px-8 md:px-10 shadow-[0_6px_20px_rgba(60,45,20,0.06)] mb-6">
+          <div className="rounded-2xl border border-border bg-card py-9 px-8 md:px-10 shadow-card mb-6">
             <h2 className="text-[22px] font-extrabold tracking-tight mb-2 text-foreground">
               First, let&apos;s set up your profile
             </h2>
@@ -128,7 +128,7 @@ export default async function Home() {
           </div>
 
           <div className="flex gap-2 items-start px-1">
-            <TriangleAlert className="h-[15px] w-[15px] shrink-0 mt-0.5 text-[#BE854A]" />
+            <TriangleAlert className="h-[15px] w-[15px] shrink-0 mt-0.5 text-warning" />
             <p className="text-[13px] text-muted-foreground leading-relaxed">
               This is a demo with a limited token budget. Each user is limited
               to 5 evaluations. You are welcome to clone{" "}
@@ -157,7 +157,7 @@ export default async function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link
             href="/profile"
-            className="block rounded-2xl border border-border bg-card p-6 shadow-[0_6px_20px_rgba(60,45,20,0.05)] transition-colors hover:border-primary/40"
+            className="block rounded-2xl border border-border bg-card p-6 shadow-card transition-colors hover:border-primary/40"
           >
             <h2 className="text-lg font-bold text-foreground">Profile</h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -166,7 +166,7 @@ export default async function Home() {
           </Link>
           <Link
             href="/tracker"
-            className="block rounded-2xl border border-border bg-card p-6 shadow-[0_6px_20px_rgba(60,45,20,0.05)] transition-colors hover:border-primary/40"
+            className="block rounded-2xl border border-border bg-card p-6 shadow-card transition-colors hover:border-primary/40"
           >
             <h2 className="text-lg font-bold text-foreground">Job Tracker</h2>
             <p className="text-sm text-muted-foreground mt-1">

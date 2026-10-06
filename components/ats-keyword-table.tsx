@@ -24,7 +24,7 @@ export function AtsKeywordTable({ atsAnalysis }: AtsKeywordTableProps) {
           {missing_exact_keywords.map((keyword, idx) => (
             <span
               key={`${keyword}-${idx}`}
-              className="text-[13px] text-[#B91C1C] bg-[#FEF2F2] border border-[#FBD5D5] rounded-full px-3 py-1"
+              className="text-[13px] text-destructive bg-destructive/5 border border-destructive/20 rounded-full px-3 py-1"
             >
               {keyword}
             </span>

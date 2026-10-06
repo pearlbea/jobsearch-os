@@ -40,7 +40,7 @@ export default function JobTrackerRow({ job }: { job: Job }) {
     <li className="flex items-center gap-4 p-4">
       <Link
         href={`/tracker/${job.id}`}
-        className="flex-1 flex gap-4 text-left px-3.5 py-2 border border-[#E2DACB] rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary"
+        className="flex-1 flex gap-4 text-left px-3.5 py-2 border border-input rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary"
       >
         <ul className="flex justify-between w-full gap-1">
           <li>

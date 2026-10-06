@@ -42,7 +42,7 @@ export function EvaluationCard({
   const badge = bandStyles[band];
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-8 shadow-[0_6px_20px_rgba(60,45,20,0.05)]">
+    <div className="bg-card border border-border rounded-2xl p-8 shadow-card">
       <div className="flex justify-between items-start gap-4 mb-6">
         {showHeader ? (
           <div className="min-w-0">

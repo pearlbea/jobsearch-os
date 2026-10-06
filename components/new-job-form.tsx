@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 const labelClass =
   "block text-[13px] font-semibold text-muted-foreground-strong mb-1.5";
 const inputClass =
-  "w-full px-3.5 py-2 border border-[#E2DACB] rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary";
+  "w-full px-3.5 py-2 border border-input rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary";
 
 // Just enough to create the row; everything else is edited on the job's
 // tracker page, where this form sends the user once the job exists.
@@ -58,7 +58,7 @@ export default function NewJobForm({ userId }: { userId: string }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-3xl mx-auto p-8 space-y-6 bg-card border border-border rounded-2xl shadow-[0_6px_20px_rgba(60,45,20,0.05)]"
+      className="max-w-3xl mx-auto p-8 space-y-6 bg-card border border-border rounded-2xl shadow-card"
     >
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
@@ -128,7 +128,7 @@ export default function NewJobForm({ userId }: { userId: string }) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Paste the job posting here"
-            className="w-full px-3.5 py-3 border border-[#E2DACB] rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
+            className="w-full px-3.5 py-3 border border-input rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
           />
         </div>
       </div>

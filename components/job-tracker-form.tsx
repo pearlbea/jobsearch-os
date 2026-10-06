@@ -88,7 +88,7 @@ function toPayload(values: FormValues): Partial<Job> {
 const labelClass =
   "block text-[13px] font-semibold text-muted-foreground-strong mb-1.5";
 const inputClass =
-  "w-full px-3.5 py-2 border border-[#E2DACB] rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary";
+  "w-full px-3.5 py-2 border border-input rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary";
 
 export default function JobTrackerForm({ job }: { job: Job }) {
   const router = useRouter();
@@ -148,7 +148,7 @@ export default function JobTrackerForm({ job }: { job: Job }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-3xl mx-auto p-8 space-y-8 bg-card border border-border rounded-2xl shadow-[0_6px_20px_rgba(60,45,20,0.05)]"
+      className="max-w-3xl mx-auto p-8 space-y-8 bg-card border border-border rounded-2xl shadow-card"
     >
       <div>
         <h2 className="text-2xl font-extrabold tracking-tight text-foreground">
@@ -228,7 +228,7 @@ export default function JobTrackerForm({ job }: { job: Job }) {
           <textarea
             rows={8}
             placeholder="Paste the job posting here. It's needed to evaluate the job."
-            className="w-full px-3.5 py-3 border border-[#E2DACB] rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
+            className="w-full px-3.5 py-3 border border-input rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
             {...textProps("raw_description")}
           />
         </div>
@@ -338,7 +338,7 @@ export default function JobTrackerForm({ job }: { job: Job }) {
           </label>
           <textarea
             rows={5}
-            className="w-full px-3.5 py-3 border border-[#E2DACB] rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
+            className="w-full px-3.5 py-3 border border-input rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
             {...textProps("notes")}
           />
         </div>

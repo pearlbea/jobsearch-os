@@ -74,7 +74,7 @@ export function ProfileForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-3xl mx-auto p-8 space-y-8 bg-card border border-border rounded-2xl shadow-[0_6px_20px_rgba(60,45,20,0.05)]"
+      className="max-w-3xl mx-auto p-8 space-y-8 bg-card border border-border rounded-2xl shadow-card"
     >
       <div>
         <h2 className="text-2xl font-extrabold tracking-tight text-foreground">
@@ -109,7 +109,7 @@ export function ProfileForm({
           required
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
-          className="w-full px-3.5 py-2 border border-[#E2DACB] rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary"
+          className="w-full px-3.5 py-2 border border-input rounded-[10px] text-sm text-foreground focus:border-primary focus:ring-primary"
           placeholder="e.g. Jane Doe"
         />
       </div>
@@ -128,7 +128,7 @@ export function ProfileForm({
           value={resumeText}
           onChange={(e) => setResumeText(e.target.value)}
           placeholder="Paste your resume here"
-          className="w-full px-3.5 py-3 border border-[#E2DACB] rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
+          className="w-full px-3.5 py-3 border border-input rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary"
         />
       </div>
 

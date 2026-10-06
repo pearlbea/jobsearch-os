@@ -11,7 +11,7 @@ import { EvaluationHistory } from "@/components/evaluation-history";
 type ResumeSource = "profile" | "tailored";
 
 const textareaClass =
-  "w-full px-3.5 py-3 border border-[#E2DACB] rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary";
+  "w-full px-3.5 py-3 border border-input rounded-[10px] text-sm text-foreground font-sans focus:border-primary focus:ring-primary";
 
 // Evaluates the job's saved description
 // against either the profile resume or a resume tailored to this job (saved
@@ -119,7 +119,7 @@ export default function JobEvaluationPanel({
       aria-labelledby="evaluation-heading"
       className="max-w-3xl mx-auto mt-8 space-y-6"
     >
-      <div className="p-8 space-y-5 bg-card border border-border rounded-2xl shadow-[0_6px_20px_rgba(60,45,20,0.05)]">
+      <div className="p-8 space-y-5 bg-card border border-border rounded-2xl shadow-card">
         <div>
           <h2
             id="evaluation-heading"

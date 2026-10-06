@@ -17,14 +17,14 @@ export function EvaluationHistory({
   onSelectEvaluation,
 }: EvaluationHistoryProps) {
   return (
-    <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-[0_6px_20px_rgba(60,45,20,0.05)]">
+    <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-card">
       <div className="px-5 py-4 border-b border-border">
         <h2 className="text-[13px] font-bold text-muted-foreground-strong uppercase tracking-wide">
           Evaluation History ({evaluations.length})
         </h2>
       </div>
 
-      <div className="divide-y divide-[#F3EEE4]">
+      <div className="divide-y divide-border-subtle">
         {evaluations.map((evaluation, idx) => {
           const isSelected = evaluation.id === selectedEvaluationId;
           const band = getScoreBand(evaluation.match_score);
