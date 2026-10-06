@@ -98,3 +98,13 @@ through the evaluation engine several times each (`EVAL_RUNS`, default 5) and
 checks score stability, calibration, dimension independence, and keyword
 detection. It uses your `ANTHROPIC_API_KEY` (about 20 calls per run) and is
 not part of `npm test`.
+
+### CI
+
+GitHub Actions runs lint, typecheck, tests, and a build on every pull request
+and push to `main` ([`ci.yml`](.github/workflows/ci.yml)). The evals
+([`eval.yml`](.github/workflows/eval.yml)) run only when a file that shapes
+the evaluation changes, or manually from the Actions tab, and post their
+summary table on the run page. They need an `ANTHROPIC_API_KEY` repository
+secret (**Settings → Secrets and variables → Actions**), and they're skipped
+on pull requests from forks, which don't receive secrets.
