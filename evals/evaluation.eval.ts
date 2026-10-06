@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { appendFileSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import {
@@ -85,25 +85,54 @@ beforeAll(async () => {
   }
 
   const dimensionKeys = Object.keys(SCORE_DIMENSIONS) as DimensionKey[];
-  console.table(
-    Object.fromEntries(
-      (Object.keys(CASES) as CaseName[]).map((name) => [
-        name,
-        {
-          scores: scores(name).join(" "),
-          median: median(scores(name)),
-          spread: spread(scores(name)),
-          ...Object.fromEntries(
-            dimensionKeys.map((key) => [
-              `${key} (med/spread)`,
-              `${median(dimension(name, key))}/${spread(dimension(name, key))}`,
-            ]),
-          ),
-        },
-      ]),
-    ),
+  const summary = Object.fromEntries(
+    (Object.keys(CASES) as CaseName[]).map((name) => [
+      name,
+      {
+        scores: scores(name).join(" "),
+        median: median(scores(name)),
+        spread: spread(scores(name)),
+        ...Object.fromEntries(
+          dimensionKeys.map((key) => [
+            `${key} (med/spread)`,
+            `${median(dimension(name, key))}/${spread(dimension(name, key))}`,
+          ]),
+        ),
+        // e.g. "senior→director ×5": which levels the scope score rests on
+        levels: tally(
+          results[name].map((r) => `${r.level.candidate}→${r.level.role}`),
+        ),
+      },
+    ]),
   );
+  console.table(summary);
+
+  // On GitHub Actions, also show the table on the run's summary page.
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    appendFileSync(process.env.GITHUB_STEP_SUMMARY, toMarkdown(summary));
+  }
 });
+
+function tally(values: string[]): string {
+  const counts = new Map<string, number>();
+  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
+  return [...counts].map(([v, n]) => `${v} ×${n}`).join(", ");
+}
+
+function toMarkdown(rows: Record<string, Record<string, unknown>>): string {
+  const columns = Object.keys(Object.values(rows)[0]);
+  const line = (cells: unknown[]) => `| ${cells.join(" | ")} |`;
+  return [
+    `### Eval results (${RUNS} runs per case)`,
+    "",
+    line(["case", ...columns]),
+    line(["---", ...columns.map(() => "---")]),
+    ...Object.entries(rows).map(([name, row]) =>
+      line([name, ...columns.map((c) => row[c])]),
+    ),
+    "",
+  ].join("\n");
+}
 
 describe("stability across repeated runs", () => {
   it.each(Object.keys(CASES) as CaseName[])(

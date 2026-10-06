@@ -1,0 +1,53 @@
+name: Evals
+
+# Calls the real Claude API (~20 calls per run), so it only runs when
+# something that shapes the evaluation changes, or on demand.
+on:
+  push:
+    branches: [main]
+    paths:
+      - lib/evaluation-engine.ts
+      - lib/schemas/**
+      - lib/score-dimensions.ts
+      - lib/redact-pii.ts
+      - evals/**
+      - vitest.eval.config.mts
+      - package-lock.json
+      - .github/workflows/eval.yml
+  pull_request:
+    paths:
+      - lib/evaluation-engine.ts
+      - lib/schemas/**
+      - lib/score-dimensions.ts
+      - lib/redact-pii.ts
+      - evals/**
+      - vitest.eval.config.mts
+      - package-lock.json
+      - .github/workflows/eval.yml
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: Runs per case
+        default: "5"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eval:
+    # Pull requests from forks don't get repository secrets.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run eval
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          EVAL_RUNS: ${{ inputs.runs || '5' }}

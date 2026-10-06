@@ -1,11 +1,35 @@
 import { z } from "zod";
 import { SCORE_DIMENSIONS } from "@/lib/score-dimensions";
 
+// Career ladder for the scope comparison. Ordered: adjacent entries are one
+// level apart. The IC and management tracks split after "senior".
+export const CAREER_LEVELS = [
+  "entry",
+  "mid",
+  "senior",
+  "staff_principal",
+  "manager",
+  "director",
+  "executive",
+] as const;
+
+const careerLevel = z.enum(CAREER_LEVELS);
+
 // Short keys reduce completion token overhead by ~40%
 export const compactEvaluationSchema = z.object({
   co: z.string().describe("Company name"),
   title: z.string().describe("Official job title"),
   remote: z.boolean().describe("Is fully remote"),
+  // Stated before the breakdown so the scope score is grounded in an
+  // explicit level comparison. Not stored; only used to steer the model.
+  level: z.object({
+    candidate: careerLevel.describe(
+      "Candidate's current level from the resume, by responsibility and total experience, regardless of field",
+    ),
+    role: careerLevel.describe(
+      "Level the posting hires for, by responsibility and total experience, regardless of field",
+    ),
+  }),
   breakdown: z.object({
     tech: z.number().min(0).max(100).describe(SCORE_DIMENSIONS.tech.description),
     domain: z

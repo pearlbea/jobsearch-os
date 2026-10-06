@@ -1,6 +1,9 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText, Output } from "ai";
-import { compactEvaluationSchema } from "@/lib/schemas/evaluation";
+import {
+  CAREER_LEVELS,
+  compactEvaluationSchema,
+} from "@/lib/schemas/evaluation";
 import { redactPii } from "@/lib/redact-pii";
 import { computeMatchScore, SCORE_DIMENSIONS } from "@/lib/score-dimensions";
 import type { EvaluationSummary, Profile } from "@/types/database";
@@ -84,9 +87,10 @@ export async function runEvaluation({
   Adjacent experience (a comparable tool in the same category) counts as half: score it one band higher than missing. A missing nice-to-have costs at most 5 points and never moves the score into a lower band. Seniority and management scope do not affect tech.
 
   SCOPE ANCHORS (breakdown.scope): Compare only level and responsibility: IC vs. management track, seniority, size of team led, and decision-making authority. Ignore whether the technologies or industry match; that is what tech and domain measure. A senior engineer applying for a senior engineering role in an unrelated field is a scope match. Years required in a specific technology or field (e.g. "6+ years of embedded C") are tech/domain requirements; for scope, compare total professional experience and responsibility.
-  - Same track and level (e.g. senior IC to senior IC, manager of ~8 to manager of ~8): 80-100.
-  - One level apart on the same track (e.g. senior to staff, squad lead to first-line manager): 55-79.
-  - Two or more levels apart, or a track change (e.g. IC to manager of managers, director to IC): below 40.
+  First set level.candidate and level.role (${CAREER_LEVELS.join(" < ")}; staff_principal is the IC track and manager onward the management track, both above senior). Then score scope from those two levels alone:
+  - Same level (e.g. senior to senior, manager to manager): 80-100.
+  - One level apart on the same track (e.g. senior to staff_principal, senior to manager, manager to director): 55-79.
+  - Two or more levels apart, or across tracks (e.g. senior to director, staff_principal to manager): below 40.
 
   Evaluate objectively and output structured JSON.
   `;
