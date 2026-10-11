@@ -33,6 +33,7 @@ export default async function JobConversationsPage(
       <JobInteractions
         jobId={job.id}
         userId={user.id}
+        jobStatus={job.status}
         initialInteractions={interactions ?? []}
       />
     </>

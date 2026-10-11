@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { statusAfterInteraction } from "@/lib/status-after-interaction";
 import {
+  ApplicationStatus,
   Interaction,
   InteractionKind,
   InteractionOutcome,
@@ -11,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import {
   INTERACTION_KIND_LABELS,
   INTERACTION_OUTCOME_LABELS,
+  STATUS_LABELS,
   labelOptions,
 } from "@/lib/labels";
 
@@ -209,13 +213,21 @@ function InteractionForm({
 export default function JobInteractions({
   jobId,
   userId,
+  jobStatus,
   initialInteractions,
 }: {
   jobId: string;
   userId: string;
+  jobStatus: ApplicationStatus | null;
   initialInteractions: Interaction[];
 }) {
   const supabase = createClient();
+  const router = useRouter();
+  const [status, setStatus] = useState(jobStatus);
+  const [statusNotice, setStatusNotice] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [interactions, setInteractions] = useState(() =>
     sortInteractions(initialInteractions),
   );
@@ -234,6 +246,36 @@ export default function JobInteractions({
     });
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // Completing an outreach or recruiter screen advances the job's status.
+  const advanceStatus = async (saved: Interaction) => {
+    setStatusNotice(null);
+    const next = statusAfterInteraction(saved.kind, saved.outcome, status);
+    if (!next) return;
+    // select() so an update that matches no row (e.g. filtered by RLS) is
+    // reported instead of silently succeeding.
+    const { data, error } = await supabase
+      .from("jobs")
+      .update({ status: next })
+      .eq("id", jobId)
+      .eq("user_id", userId)
+      .select("id")
+      .maybeSingle();
+    if (error || !data) {
+      console.error("Job status update error:", error);
+      setStatusNotice({
+        type: "error",
+        text: `Saved, but couldn't update the job status: ${error?.message ?? "job not found"}`,
+      });
+      return;
+    }
+    setStatus(next);
+    setStatusNotice({
+      type: "success",
+      text: `Job status updated to ${STATUS_LABELS[next]}.`,
+    });
+    router.refresh();
+  };
+
   const handleCreate = async (payload: Partial<Interaction>) => {
     const { data, error } = await supabase
       .from("interactions")
@@ -243,9 +285,11 @@ export default function JobInteractions({
     if (error) throw error;
     setInteractions((prev) => sortInteractions([...prev, data]));
     closeForm(NEW_FORM);
+    await advanceStatus(data);
   };
 
   const handleUpdate = async (id: string, payload: Partial<Interaction>) => {
+    const previous = interactions.find((i) => i.id === id);
     const { data, error } = await supabase
       .from("interactions")
       .update({ ...payload, updated_at: new Date().toISOString() })
@@ -259,6 +303,11 @@ export default function JobInteractions({
       sortInteractions(prev.map((i) => (i.id === id ? data : i))),
     );
     closeForm(id);
+    // Only a transition into "completed" counts; re-saving an already
+    // completed interaction shouldn't override a status set by hand since.
+    if (previous?.outcome !== "completed" || previous.kind !== data.kind) {
+      await advanceStatus(data);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -295,6 +344,19 @@ export default function JobInteractions({
           </Button>
         )}
       </div>
+
+      {statusNotice && (
+        <div
+          role={statusNotice.type === "error" ? "alert" : "status"}
+          className={`p-3 rounded-md text-sm font-medium ${
+            statusNotice.type === "error"
+              ? "bg-red-50 text-red-800"
+              : "bg-green-50 text-green-800"
+          }`}
+        >
+          {statusNotice.text}
+        </div>
+      )}
 
       {deleteError && (
         <div

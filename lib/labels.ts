@@ -28,6 +28,7 @@ export const WORK_MODE_LABELS: Record<WorkMode, string> = {
 };
 
 export const INTERACTION_KIND_LABELS: Record<InteractionKind, string> = {
+  outreach: "Outreach",
   recruiter_screen: "Recruiter Screen",
   hiring_manager: "Hiring Manager",
   technical: "Technical",

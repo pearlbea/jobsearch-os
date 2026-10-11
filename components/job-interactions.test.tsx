@@ -12,6 +12,11 @@ vi.mock("@/lib/supabase/client", () => ({
   createClient: vi.fn(),
 }));
 
+const mockRefresh = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: mockRefresh }),
+}));
+
 const baseInteraction = makeInteraction({
   user_id: "user-123",
   occurred_at: "2026-09-10T15:00:00Z",
@@ -24,6 +29,7 @@ const baseInteraction = makeInteraction({
 const props = {
   jobId: "job-1",
   userId: "user-123",
+  jobStatus: "bookmarked" as const,
   initialInteractions: [baseInteraction],
 };
 
@@ -306,5 +312,121 @@ describe("JobInteractions", () => {
 
     const results = await axe.run(container);
     expect(results.violations).toEqual([]);
+  });
+
+  describe("advancing the job status", () => {
+    beforeEach(() => {
+      mockSupabase.maybeSingle.mockResolvedValue({
+        data: { id: "job-1" },
+        error: null,
+      });
+    });
+
+    const addCompleted = async (kind: string, data: Interaction) => {
+      mockSupabase.single.mockResolvedValue({ data, error: null });
+      const user = userEvent.setup();
+      render(<JobInteractions {...props} initialInteractions={[]} />);
+      await user.click(screen.getByRole("button", { name: "Add Interaction" }));
+      await user.selectOptions(screen.getByLabelText("Type"), kind);
+      await user.selectOptions(screen.getByLabelText("Outcome"), "completed");
+      await user.click(screen.getByRole("button", { name: "Add" }));
+    };
+
+    it("sets outreach_sent when outreach is completed on a bookmarked job", async () => {
+      await addCompleted(
+        "outreach",
+        { ...baseInteraction, id: "n", kind: "outreach", outcome: "completed" },
+      );
+
+      expect(
+        await screen.findByText("Job status updated to Outreach Sent."),
+      ).toBeInTheDocument();
+      expect(mockSupabase.from).toHaveBeenCalledWith("jobs");
+      expect(mockSupabase.update).toHaveBeenCalledWith({ status: "outreach_sent" });
+      expect(mockSupabase.eq).toHaveBeenCalledWith("id", "job-1");
+      expect(mockRefresh).toHaveBeenCalled();
+    });
+
+    it("sets interviewing when a recruiter screen is completed", async () => {
+      await addCompleted(
+        "recruiter_screen",
+        { ...baseInteraction, id: "n", kind: "recruiter_screen", outcome: "completed" },
+      );
+
+      await waitFor(() =>
+        expect(mockSupabase.update).toHaveBeenCalledWith({ status: "interviewing" }),
+      );
+    });
+
+    it("leaves the status alone for other kinds", async () => {
+      await addCompleted(
+        "technical",
+        { ...baseInteraction, id: "n", kind: "technical", outcome: "completed" },
+      );
+
+      await screen.findByText("Technical");
+      expect(mockSupabase.from).not.toHaveBeenCalledWith("jobs");
+      expect(mockRefresh).not.toHaveBeenCalled();
+    });
+
+    it("advances when an edit marks an interaction completed", async () => {
+      const scheduled = { ...baseInteraction, kind: "recruiter_screen" as const, outcome: "scheduled" as const };
+      mockSupabase.single.mockResolvedValue({
+        data: { ...scheduled, outcome: "completed" },
+        error: null,
+      });
+      const user = userEvent.setup();
+      render(<JobInteractions {...props} initialInteractions={[scheduled]} />);
+
+      await user.click(screen.getByRole("button", { name: "Edit" }));
+      await user.selectOptions(screen.getByLabelText("Outcome"), "completed");
+      await user.click(screen.getByRole("button", { name: "Save" }));
+
+      await waitFor(() =>
+        expect(mockSupabase.update).toHaveBeenCalledWith({ status: "interviewing" }),
+      );
+    });
+
+    it("doesn't re-advance when an already completed interaction is re-saved", async () => {
+      const done = { ...baseInteraction, kind: "recruiter_screen" as const, outcome: "completed" as const };
+      mockSupabase.single.mockResolvedValue({
+        data: { ...done, notes: "Updated." },
+        error: null,
+      });
+      const user = userEvent.setup();
+      render(<JobInteractions {...props} initialInteractions={[done]} />);
+
+      await user.click(screen.getByRole("button", { name: "Edit" }));
+      await user.click(screen.getByRole("button", { name: "Save" }));
+
+      await screen.findByText("Updated.");
+      expect(mockSupabase.from).not.toHaveBeenCalledWith("jobs");
+    });
+
+    it("reports a status update that matched no job", async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
+      await addCompleted(
+        "outreach",
+        { ...baseInteraction, id: "n", kind: "outreach", outcome: "completed" },
+      );
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("job not found");
+    });
+
+    it("reports a failed status update without losing the saved interaction", async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({
+        data: null,
+        error: new Error("denied"),
+      });
+      await addCompleted(
+        "outreach",
+        { ...baseInteraction, id: "n", kind: "outreach", outcome: "completed" },
+      );
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Saved, but couldn't update the job status: denied",
+      );
+      expect(screen.getByText("Outreach")).toBeInTheDocument();
+    });
   });
 });

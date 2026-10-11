@@ -11,6 +11,7 @@ export type ApplicationStatus =
 export type WorkMode = "remote" | "hybrid" | "onsite";
 
 export type InteractionKind =
+  | "outreach"
   | "recruiter_screen"
   | "hiring_manager"
   | "technical"
