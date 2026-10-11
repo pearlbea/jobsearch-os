@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi, type Mock } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import axe from "axe-core";
 import Home from "./page";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
   createMockSupabaseClient,
@@ -12,16 +13,8 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
-// The "welcome back" state renders RailShell, a client component that reads
-// the route and creates a browser Supabase client — neither is available in
-// this render environment, so stub them like rail-shell.test.tsx does.
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
-  usePathname: () => "/",
-}));
-
-vi.mock("@/lib/supabase/client", () => ({
-  createClient: vi.fn(),
+  redirect: vi.fn(),
 }));
 
 describe("Home page", () => {
@@ -113,7 +106,7 @@ describe("Home page", () => {
     expect(mockSupabase.from).not.toHaveBeenCalled();
   });
 
-  it("shows the profile/tracker dashboard when logged in with a profile", async () => {
+  it("redirects to the tracker when logged in with a profile", async () => {
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: { id: "user-123", email: "pearl@example.com" } },
       error: null,
@@ -123,31 +116,14 @@ describe("Home page", () => {
       error: null,
     });
 
-    const page = await Home();
-    render(page);
+    await Home();
 
-    // Scope to the dashboard content, since the rail nav has its own
-    // "Profile" / "Tracker" links with overlapping accessible names.
-    const main = within(screen.getByRole("main"));
-
-    expect(screen.getByText("Welcome back, Jane Doe.")).toBeInTheDocument();
-    expect(main.getByRole("link", { name: /Profile/ })).toHaveAttribute(
-      "href",
-      "/profile",
-    );
-    expect(main.getByRole("link", { name: /Job Tracker/ })).toHaveAttribute(
-      "href",
-      "/tracker",
-    );
+    expect(redirect).toHaveBeenCalledWith("/tracker");
   });
 
   it("has no detectable accessibility violations", async () => {
     mockSupabase.auth.getUser.mockResolvedValue({
-      data: { user: { id: "user-123", email: "pearl@example.com" } },
-      error: null,
-    });
-    mockSupabase.single.mockResolvedValue({
-      data: { id: "user-123", full_name: "Jane Doe" },
+      data: { user: null },
       error: null,
     });
 

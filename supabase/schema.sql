@@ -99,7 +99,7 @@ create table if not exists public.interactions (
   job_id uuid not null references public.jobs (id) on delete cascade,
   user_id uuid not null references auth.users (id) on delete cascade,
   kind text not null check (kind in (
-    'recruiter_screen', 'hiring_manager', 'technical', 'panel',
+    'outreach', 'recruiter_screen', 'hiring_manager', 'technical', 'panel',
     'take_home', 'onsite', 'offer_call', 'email', 'other')),
   -- Null = not scheduled yet; future timestamps = upcoming.
   occurred_at timestamptz,
@@ -111,6 +111,11 @@ create table if not exists public.interactions (
   created_at timestamptz not null default now(),
   updated_at timestamptz
 );
+-- Re-created so existing databases pick up newly allowed kinds.
+alter table public.interactions drop constraint if exists interactions_kind_check;
+alter table public.interactions add constraint interactions_kind_check
+  check (kind in ('outreach', 'recruiter_screen', 'hiring_manager', 'technical',
+                  'panel', 'take_home', 'onsite', 'offer_call', 'email', 'other'));
 
 create index if not exists jobs_user_id_idx on public.jobs (user_id);
 create index if not exists stories_user_id_idx on public.stories (user_id);

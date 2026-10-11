@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { statusTransitionAfterInteraction } from "@/lib/status-after-interaction";
 import {
+  ApplicationStatus,
   Interaction,
   InteractionKind,
   InteractionOutcome,
@@ -11,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import {
   INTERACTION_KIND_LABELS,
   INTERACTION_OUTCOME_LABELS,
+  STATUS_LABELS,
   labelOptions,
 } from "@/lib/labels";
 
@@ -157,7 +161,11 @@ function InteractionForm({
         <label className={labelClass} htmlFor={`${idPrefix}-occurred_at`}>
           Date &amp; Time
         </label>
-        <input type="datetime-local" className={inputClass} {...field("occurred_at")} />
+        <input
+          type="datetime-local"
+          className={inputClass}
+          {...field("occurred_at")}
+        />
       </div>
       <div>
         <label className={labelClass} htmlFor={`${idPrefix}-interviewer_names`}>
@@ -209,13 +217,21 @@ function InteractionForm({
 export default function JobInteractions({
   jobId,
   userId,
+  jobStatus,
   initialInteractions,
 }: {
   jobId: string;
   userId: string;
+  jobStatus: ApplicationStatus | null;
   initialInteractions: Interaction[];
 }) {
   const supabase = createClient();
+  const router = useRouter();
+  const [status, setStatus] = useState(jobStatus);
+  const [statusNotice, setStatusNotice] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [interactions, setInteractions] = useState(() =>
     sortInteractions(initialInteractions),
   );
@@ -234,18 +250,74 @@ export default function JobInteractions({
     });
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // Completing an outreach or recruiter screen advances the job's status.
+  // Never throws: the interaction is already saved by the time this runs, so
+  // a failure here is reported as a notice, not as a failed save.
+  const advanceStatus = async (saved: Interaction) => {
+    setStatusNotice(null);
+    const transition = statusTransitionAfterInteraction(
+      saved.kind,
+      saved.outcome,
+      status,
+    );
+    if (!transition) return;
+    try {
+      // The update is conditional on the status being one we may advance
+      // from, because `status` can be stale (changed in another tab, or by
+      // an earlier save still in flight). A stale write then matches no row
+      // instead of overwriting or downgrading the newer status. select() so
+      // a no-match is reported rather than silently succeeding.
+      const { data, error } = await supabase
+        .from("jobs")
+        .update({ status: transition.to })
+        .eq("id", jobId)
+        .eq("user_id", userId)
+        .in("status", [...transition.from])
+        .select("id")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        setStatusNotice({
+          type: "error",
+          text: "Saved, but the job status wasn't updated: it was changed elsewhere or the job wasn't found.",
+        });
+        router.refresh();
+        return;
+      }
+      setStatus(transition.to);
+      setStatusNotice({
+        type: "success",
+        text: `Job status updated to ${STATUS_LABELS[transition.to]}.`,
+      });
+      router.refresh();
+    } catch (error) {
+      console.error("Job status update error:", error);
+      setStatusNotice({
+        type: "error",
+        text: `Saved, but couldn't update the job status: ${(error as { message?: string })?.message ?? "unknown error"}`,
+      });
+    }
+  };
+
   const handleCreate = async (payload: Partial<Interaction>) => {
     const { data, error } = await supabase
       .from("interactions")
-      .insert({ ...payload, kind: payload.kind!, job_id: jobId, user_id: userId })
+      .insert({
+        ...payload,
+        kind: payload.kind!,
+        job_id: jobId,
+        user_id: userId,
+      })
       .select("*")
       .single();
     if (error) throw error;
     setInteractions((prev) => sortInteractions([...prev, data]));
     closeForm(NEW_FORM);
+    await advanceStatus(data);
   };
 
   const handleUpdate = async (id: string, payload: Partial<Interaction>) => {
+    const previous = interactions.find((i) => i.id === id);
     const { data, error } = await supabase
       .from("interactions")
       .update({ ...payload, updated_at: new Date().toISOString() })
@@ -259,6 +331,11 @@ export default function JobInteractions({
       sortInteractions(prev.map((i) => (i.id === id ? data : i))),
     );
     closeForm(id);
+    // Only a transition into "completed" counts; re-saving an already
+    // completed interaction shouldn't override a status set by hand since.
+    if (previous?.outcome !== "completed" || previous.kind !== data.kind) {
+      await advanceStatus(data);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -295,6 +372,19 @@ export default function JobInteractions({
           </Button>
         )}
       </div>
+
+      {statusNotice && (
+        <div
+          role={statusNotice.type === "error" ? "alert" : "status"}
+          className={`p-3 rounded-md text-sm font-medium ${
+            statusNotice.type === "error"
+              ? "bg-red-50 text-red-800"
+              : "bg-green-50 text-green-800"
+          }`}
+        >
+          {statusNotice.text}
+        </div>
+      )}
 
       {deleteError && (
         <div

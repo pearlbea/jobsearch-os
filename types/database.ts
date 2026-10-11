@@ -11,6 +11,7 @@ export type ApplicationStatus =
 export type WorkMode = "remote" | "hybrid" | "onsite";
 
 export type InteractionKind =
+  | "outreach"
   | "recruiter_screen"
   | "hiring_manager"
   | "technical"
@@ -123,6 +124,8 @@ export interface EvaluationSummary {
   key_strengths: string[];
   potential_gaps: string[];
   positioning_advice: string;
+  // Absent on evaluations created before talking points existed.
+  talking_points?: { point: string; evidence: string }[];
   ats_analysis?: {
     missing_exact_keywords: string[];
     formatting_warnings: string[];

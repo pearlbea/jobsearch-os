@@ -10,6 +10,7 @@ export default function JobTabs({ jobId }: { jobId: string }) {
   const tabs = [
     { href: base, label: "Tracking" },
     { href: `${base}/evaluation`, label: "Evaluation" },
+    { href: `${base}/conversations`, label: "Conversations" },
   ];
 
   return (

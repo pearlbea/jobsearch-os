@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { Check, Copy, Info } from "lucide-react";
 import { Job, Evaluation } from "@/types/database";
 import { AtsKeywordTable } from "@/components/ats-keyword-table";
 import { Button } from "@/components/ui/button";
@@ -35,8 +39,10 @@ export function EvaluationCard({
       potential_gaps,
       positioning_advice,
       ats_analysis,
+      talking_points,
     },
   } = evaluation;
+  const hasTalkingPoints = !!talking_points?.length;
 
   const band = getScoreBand(matchScore);
   const badge = bandStyles[band];
@@ -93,6 +99,17 @@ export function EvaluationCard({
         showHeader ? "p-8" : "p-5",
       )}
     >
+      <p className="flex items-start gap-2 text-xs text-muted-foreground mb-5">
+        <Info aria-hidden="true" className="size-3.5 mt-0.5 shrink-0" />
+        <span>
+          {`AI-generated from your resume and this job description. The ${
+            hasTalkingPoints
+              ? "scores, strengths, gaps, and talking points"
+              : "scores, strengths, and gaps"
+          } may be inaccurate. Check them against your own experience before relying on them.`}
+        </span>
+      </p>
+
       <div
         className={cn(
           "flex gap-4",
@@ -182,6 +199,8 @@ export function EvaluationCard({
         </div>
       </div>
 
+      {hasTalkingPoints && <TalkingPoints points={talking_points} />}
+
       {ats_analysis && <AtsKeywordTable atsAnalysis={ats_analysis} />}
 
       {onReevaluate && (
@@ -238,6 +257,68 @@ function ScoreBar({
           style={{ width: band ? `${score}%` : "0%" }}
         />
       </div>
+    </div>
+  );
+}
+
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="xs"
+      aria-label={label}
+      onClick={copy}
+    >
+      {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+      {copied ? "Copied" : "Copy"}
+    </Button>
+  );
+}
+
+function TalkingPoints({
+  points,
+}: {
+  points: { point: string; evidence: string }[];
+}) {
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-[13px] font-bold text-foreground">
+          Talking points
+        </h4>
+        <CopyButton
+          label="Copy all talking points"
+          text={points.map((p) => p.point).join("\n\n")}
+        />
+      </div>
+      <ul className="flex flex-col gap-3">
+        {points.map((p, idx) => (
+          <li
+            key={idx}
+            className="flex items-start justify-between gap-3 bg-background rounded-[10px] px-4 py-3"
+          >
+            <div className="text-sm leading-relaxed text-muted-foreground-strong">
+              <p>{p.point}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                From your resume: {p.evidence}
+              </p>
+            </div>
+            <CopyButton
+              label={`Copy talking point ${idx + 1}`}
+              text={p.point}
+            />
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

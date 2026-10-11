@@ -8,7 +8,7 @@ import {
   createMockSupabaseClient,
   type MockSupabaseClient,
 } from "@/test/supabase-mock";
-import { makeInteraction, makeJob } from "@/test/fixtures";
+import { makeJob } from "@/test/fixtures";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 // The page's child components use the browser client; they don't query on render.
@@ -33,19 +33,12 @@ const job = makeJob({
   created_at: "2026-09-01T00:00:00Z",
 });
 
-const interaction = makeInteraction({
-  user_id: "user-123",
-  kind: "hiring_manager",
-  created_at: "2026-09-02T00:00:00Z",
-});
-
 const props = (job_id = "job-1") =>
   ({ params: Promise.resolve({ job_id }) }) as PageProps<"/tracker/[job_id]">;
 
 describe("JobPage", () => {
   let mockSupabase: MockSupabaseClient;
   let jobsQuery: ReturnType<typeof createMockQueryBuilder>;
-  let interactionsQuery: ReturnType<typeof createMockQueryBuilder>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -56,51 +49,36 @@ describe("JobPage", () => {
       error: null,
     });
 
-    // The page queries two tables in parallel, so each needs its own chain.
     jobsQuery = createMockQueryBuilder({
       single: vi.fn().mockResolvedValue({ data: job, error: null }),
     });
-    interactionsQuery = createMockQueryBuilder({
-      order: vi.fn().mockResolvedValue({ data: [interaction], error: null }),
-    });
     const queries: Record<string, ReturnType<typeof createMockQueryBuilder>> = {
       jobs: jobsQuery,
-      interactions: interactionsQuery,
     };
     mockSupabase.from.mockImplementation((table: string) => queries[table]);
   });
 
-  it("renders the job form and its interactions", async () => {
+  it("renders the job form", async () => {
     render(await JobPage(props()));
 
     expect(
       screen.getByRole("heading", { name: "Staff Engineer" }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Status")).toHaveValue("interviewing");
-    expect(
-      screen.getByRole("heading", { name: "Conversations & Interviews" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Hiring Manager")).toBeInTheDocument();
   });
 
-  it("doesn't render or query the evaluation", async () => {
+  it("doesn't render or query the evaluation or interactions", async () => {
     render(await JobPage(props()));
 
     expect(
       screen.queryByRole("heading", { name: "Evaluation" }),
     ).not.toBeInTheDocument();
-    expect(mockSupabase.from).not.toHaveBeenCalledWith("evaluations");
-    expect(mockSupabase.from).not.toHaveBeenCalledWith("profiles");
-  });
-
-  it("shows the empty state when the job has no interactions", async () => {
-    interactionsQuery.order.mockResolvedValue({ data: null, error: null });
-
-    render(await JobPage(props()));
-
     expect(
-      screen.getByText("No conversations or interviews yet."),
-    ).toBeInTheDocument();
+      screen.queryByRole("heading", { name: "Conversations & Interviews" }),
+    ).not.toBeInTheDocument();
+    expect(mockSupabase.from).not.toHaveBeenCalledWith("evaluations");
+    expect(mockSupabase.from).not.toHaveBeenCalledWith("interactions");
+    expect(mockSupabase.from).not.toHaveBeenCalledWith("profiles");
   });
 
   it("404s when the job doesn't exist or belongs to another user", async () => {
@@ -136,15 +114,6 @@ describe("JobPage", () => {
       "column jobs.work_mode does not exist",
     );
     expect(notFound).not.toHaveBeenCalled();
-  });
-
-  it("throws when loading interactions fails", async () => {
-    interactionsQuery.order.mockResolvedValue({
-      data: null,
-      error: new Error("relation does not exist"),
-    });
-
-    await expect(JobPage(props())).rejects.toThrow("relation does not exist");
   });
 
   it("redirects to login when not signed in", async () => {

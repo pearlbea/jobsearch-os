@@ -1,9 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { TriangleAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
-import { RailShell } from "@/components/rail-shell";
 import { bandStyles, getScoreBand } from "@/lib/score-band";
 import { cn } from "@/lib/utils";
 
@@ -148,33 +148,5 @@ export default async function Home() {
     );
   }
 
-  return (
-    <RailShell userEmail={loggedIn.email ?? ""}>
-      <div className="max-w-3xl mx-auto space-y-6">
-        <h1 className="text-[28px] font-extrabold tracking-tight text-foreground mb-6">
-          Welcome back, {profile.full_name || loggedIn.email}.
-        </h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Link
-            href="/profile"
-            className="block rounded-2xl border border-border bg-card p-6 shadow-card transition-colors hover:border-primary/40"
-          >
-            <h2 className="text-lg font-bold text-foreground">Profile</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              View or update your resume.
-            </p>
-          </Link>
-          <Link
-            href="/tracker"
-            className="block rounded-2xl border border-border bg-card p-6 shadow-card transition-colors hover:border-primary/40"
-          >
-            <h2 className="text-lg font-bold text-foreground">Job Tracker</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Add jobs, evaluate your fit, and track your applications.
-            </p>
-          </Link>
-        </div>
-      </div>
-    </RailShell>
-  );
+  redirect("/tracker");
 }
