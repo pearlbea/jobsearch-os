@@ -22,12 +22,7 @@ export type InteractionKind =
   | "email"
   | "other";
 
-export type InteractionOutcome =
-  | "scheduled"
-  | "completed"
-  | "passed"
-  | "rejected"
-  | "cancelled";
+export type InteractionOutcome = "scheduled" | "completed" | "cancelled";
 
 export interface Profile {
   id: string;

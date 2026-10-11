@@ -43,8 +43,6 @@ export const INTERACTION_KIND_LABELS: Record<InteractionKind, string> = {
 export const INTERACTION_OUTCOME_LABELS: Record<InteractionOutcome, string> = {
   scheduled: "Scheduled",
   completed: "Completed",
-  passed: "Passed",
-  rejected: "Rejected",
   cancelled: "Cancelled",
 };
 
