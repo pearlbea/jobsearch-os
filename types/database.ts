@@ -124,6 +124,8 @@ export interface EvaluationSummary {
   key_strengths: string[];
   potential_gaps: string[];
   positioning_advice: string;
+  // Absent on evaluations created before talking points existed.
+  talking_points?: { point: string; evidence: string }[];
   ats_analysis?: {
     missing_exact_keywords: string[];
     formatting_warnings: string[];

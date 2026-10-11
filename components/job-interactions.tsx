@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { statusAfterInteraction } from "@/lib/status-after-interaction";
+import { statusTransitionAfterInteraction } from "@/lib/status-after-interaction";
 import {
   ApplicationStatus,
   Interaction,
@@ -161,7 +161,11 @@ function InteractionForm({
         <label className={labelClass} htmlFor={`${idPrefix}-occurred_at`}>
           Date &amp; Time
         </label>
-        <input type="datetime-local" className={inputClass} {...field("occurred_at")} />
+        <input
+          type="datetime-local"
+          className={inputClass}
+          {...field("occurred_at")}
+        />
       </div>
       <div>
         <label className={labelClass} htmlFor={`${idPrefix}-interviewer_names`}>
@@ -247,39 +251,63 @@ export default function JobInteractions({
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Completing an outreach or recruiter screen advances the job's status.
+  // Never throws: the interaction is already saved by the time this runs, so
+  // a failure here is reported as a notice, not as a failed save.
   const advanceStatus = async (saved: Interaction) => {
     setStatusNotice(null);
-    const next = statusAfterInteraction(saved.kind, saved.outcome, status);
-    if (!next) return;
-    // select() so an update that matches no row (e.g. filtered by RLS) is
-    // reported instead of silently succeeding.
-    const { data, error } = await supabase
-      .from("jobs")
-      .update({ status: next })
-      .eq("id", jobId)
-      .eq("user_id", userId)
-      .select("id")
-      .maybeSingle();
-    if (error || !data) {
+    const transition = statusTransitionAfterInteraction(
+      saved.kind,
+      saved.outcome,
+      status,
+    );
+    if (!transition) return;
+    try {
+      // The update is conditional on the status being one we may advance
+      // from, because `status` can be stale (changed in another tab, or by
+      // an earlier save still in flight). A stale write then matches no row
+      // instead of overwriting or downgrading the newer status. select() so
+      // a no-match is reported rather than silently succeeding.
+      const { data, error } = await supabase
+        .from("jobs")
+        .update({ status: transition.to })
+        .eq("id", jobId)
+        .eq("user_id", userId)
+        .in("status", [...transition.from])
+        .select("id")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        setStatusNotice({
+          type: "error",
+          text: "Saved, but the job status wasn't updated: it was changed elsewhere or the job wasn't found.",
+        });
+        router.refresh();
+        return;
+      }
+      setStatus(transition.to);
+      setStatusNotice({
+        type: "success",
+        text: `Job status updated to ${STATUS_LABELS[transition.to]}.`,
+      });
+      router.refresh();
+    } catch (error) {
       console.error("Job status update error:", error);
       setStatusNotice({
         type: "error",
-        text: `Saved, but couldn't update the job status: ${error?.message ?? "job not found"}`,
+        text: `Saved, but couldn't update the job status: ${(error as { message?: string })?.message ?? "unknown error"}`,
       });
-      return;
     }
-    setStatus(next);
-    setStatusNotice({
-      type: "success",
-      text: `Job status updated to ${STATUS_LABELS[next]}.`,
-    });
-    router.refresh();
   };
 
   const handleCreate = async (payload: Partial<Interaction>) => {
     const { data, error } = await supabase
       .from("interactions")
-      .insert({ ...payload, kind: payload.kind!, job_id: jobId, user_id: userId })
+      .insert({
+        ...payload,
+        kind: payload.kind!,
+        job_id: jobId,
+        user_id: userId,
+      })
       .select("*")
       .single();
     if (error) throw error;

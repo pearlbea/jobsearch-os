@@ -115,11 +115,22 @@ export async function POST(
       );
     }
 
-    const { evalResult, fullEvaluationSummary } = await runEvaluation({
+    const {
+      evalResult,
+      fullEvaluationSummary,
+      droppedTalkingPoints,
+    } = await runEvaluation({
       profile: { full_name: profile?.full_name ?? null, resume: resumeUsed },
       stories,
       cleanedDescription,
     });
+
+    if (droppedTalkingPoints.length > 0) {
+      console.warn(
+        `Dropped ${droppedTalkingPoints.length} talking point(s) with unsupported numbers:`,
+        droppedTalkingPoints.map((d) => d.reason),
+      );
+    }
 
     // 6. Save the new evaluation row
     const { data: savedEvaluation, error: evalInsertError } = await supabase

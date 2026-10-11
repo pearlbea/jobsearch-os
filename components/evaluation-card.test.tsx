@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import axe from "axe-core";
+import userEvent from "@testing-library/user-event";
 import { EvaluationCard } from "./evaluation-card";
 import type { EvaluationSummary, Evaluation } from "@/types/database";
 import { makeJob } from "@/test/fixtures";
@@ -101,7 +102,10 @@ describe("EvaluationCard Component", () => {
           ...baseEvaluation,
           evaluation_summary: {
             ...baseEvaluationSummary,
-            ats_analysis: { missing_exact_keywords: [], formatting_warnings: [] },
+            ats_analysis: {
+              missing_exact_keywords: [],
+              formatting_warnings: [],
+            },
           },
         }}
       />,
@@ -164,6 +168,92 @@ describe("EvaluationCard Component", () => {
 
     const results = await axe.run(container);
 
+    expect(results.violations).toEqual([]);
+  });
+});
+
+describe("EvaluationCard talking points and disclosure", () => {
+  const withPoints: Evaluation = {
+    ...baseEvaluation,
+    evaluation_summary: {
+      ...baseEvaluationSummary,
+      talking_points: [
+        {
+          point: "I led the platform migration.",
+          evidence: "Acme, Staff Engineer",
+        },
+        { point: "I built the design system.", evidence: "Globex" },
+      ],
+    },
+  };
+
+  it("renders talking points with evidence", () => {
+    render(<EvaluationCard job={baseJob} evaluation={withPoints} />);
+    expect(screen.getByText("Talking points")).toBeInTheDocument();
+    expect(
+      screen.getByText("I led the platform migration."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("From your resume: Acme, Staff Engineer"),
+    ).toBeInTheDocument();
+  });
+
+  it("omits the section when points are missing or empty", () => {
+    const { rerender } = render(
+      <EvaluationCard job={baseJob} evaluation={baseEvaluation} />,
+    );
+    expect(screen.queryByText("Talking points")).not.toBeInTheDocument();
+    rerender(
+      <EvaluationCard
+        job={baseJob}
+        evaluation={{
+          ...baseEvaluation,
+          evaluation_summary: { ...baseEvaluationSummary, talking_points: [] },
+        }}
+      />,
+    );
+    expect(screen.queryByText("Talking points")).not.toBeInTheDocument();
+  });
+
+  it("shows the disclosure before the score, naming talking points only when present", () => {
+    const { container, rerender } = render(
+      <EvaluationCard job={baseJob} evaluation={baseEvaluation} />,
+    );
+    const text = /AI-generated from your resume/;
+    const disclosure = screen.getByText(text);
+    expect(disclosure.textContent).not.toMatch(/talking points/);
+    expect(
+      disclosure.compareDocumentPosition(screen.getByText("OVERALL")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(container).toBeTruthy();
+    rerender(<EvaluationCard job={baseJob} evaluation={withPoints} />);
+    expect(screen.getByText(text).textContent).toMatch(/talking points/);
+  });
+
+  it("copies a single point and all points, excluding the disclosure", async () => {
+    const user = userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, "writeText");
+    render(<EvaluationCard job={baseJob} evaluation={withPoints} />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Copy talking point 1" }),
+    );
+    expect(writeText).toHaveBeenLastCalledWith("I led the platform migration.");
+
+    await user.click(
+      screen.getByRole("button", { name: "Copy all talking points" }),
+    );
+    expect(writeText).toHaveBeenLastCalledWith(
+      "I led the platform migration.\n\nI built the design system.",
+    );
+  });
+
+  it("has no axe violations with talking points", async () => {
+    const { container } = render(
+      <EvaluationCard job={baseJob} evaluation={withPoints} />,
+    );
+    const results = await axe.run(container);
     expect(results.violations).toEqual([]);
   });
 });

@@ -64,6 +64,19 @@ export const compactEvaluationSchema = z.object({
     .max(2)
     .describe("Top 1-2 missing skills/qualifications"),
   advice: z.string().describe("1-sentence positioning strategy"),
+  // Last of the scored/analytic fields so the scores are generated before any
+  // talking-point text exists.
+  points: z
+    .array(
+      z.object({
+        say: z.string().describe("1-2 sentences, first person, speakable"),
+        basis: z.string().describe("Resume role or project this rests on"),
+      }),
+    )
+    .max(3)
+    .describe(
+      "2-3 talking points the candidate can say; resume-supported only; empty if none",
+    ),
   skills: z
     .array(z.string())
     .max(6)
