@@ -37,4 +37,16 @@ describe("JobTabs", () => {
       "aria-current",
     );
   });
+
+  it("links to and marks the Conversations tab", () => {
+    pathname = "/tracker/job-1/conversations";
+    render(<JobTabs jobId="job-1" />);
+
+    const link = screen.getByRole("link", { name: "Conversations" });
+    expect(link).toHaveAttribute("href", "/tracker/job-1/conversations");
+    expect(link).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Tracking" })).not.toHaveAttribute(
+      "aria-current",
+    );
+  });
 });

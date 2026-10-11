@@ -33,8 +33,9 @@ track application details and conversations/interviews.
   (the number is duplicated there; `schema.test.ts` keeps them equal).
 - **Pages**: `/` (dashboard/landing), `/profile` (profile + default resume),
   `/tracker` (job list), `/tracker/new` (add a job), `/tracker/[job_id]` (Tracking tab:
-  job details, interactions), `/tracker/[job_id]/evaluation` (Evaluation tab),
-  `/login`. The two job tabs share `tracker/[job_id]/layout.tsx` (back link +
+  job details), `/tracker/[job_id]/evaluation` (Evaluation tab),
+  `/tracker/[job_id]/conversations` (Conversations tab: conversations &
+  interviews), `/login`. The three job tabs share `tracker/[job_id]/layout.tsx` (back link +
   `JobTabs`). `/evaluator` only redirects old links to the Evaluation tab.
 - **`stories` table** exists in the schema (title/company/competencies/story
   text — sounds like behavioral-interview accomplishment stories). Only its
