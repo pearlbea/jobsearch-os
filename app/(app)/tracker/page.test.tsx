@@ -61,7 +61,12 @@ describe("TrackerPage", () => {
     });
     expect(
       screen.getAllByRole("link").map((link) => link.getAttribute("href")),
-    ).toEqual(["/tracker/job-2", "/tracker/job-1"]);
+    ).toEqual([
+      "/tracker/job-2",
+      "/tracker/job-2/evaluation",
+      "/tracker/job-1",
+      "/tracker/job-1/evaluation",
+    ]);
     expect(screen.queryByText(/No jobs yet/)).not.toBeInTheDocument();
     expect(screen.getByText("Applied")).toBeInTheDocument();
   });

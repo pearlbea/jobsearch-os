@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Evaluation, Job } from "@/types/database";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ export default function JobEvaluationPanel({
   hasProfileResume: boolean;
 }) {
   const supabase = createClient();
+  const router = useRouter();
 
   const [evaluations, setEvaluations] = useState(initialEvaluations);
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -48,7 +50,7 @@ export default function JobEvaluationPanel({
   const [error, setError] = useState<string | null>(null);
 
   // Read from the saved job, not the form above, so it updates once the job
-  // details are saved (JobTrackerForm refreshes the page).
+  // details are saved (JobTrackerForm refreshes the router).
   const hasDescription = !!job.raw_description?.trim();
   const usesPastedResume = !hasProfileResume || resumeSource === "tailored";
   const selectedEvaluation =
@@ -106,6 +108,8 @@ export default function JobEvaluationPanel({
       const evaluation = data.evaluation as Evaluation;
       setEvaluations((prev) => [evaluation, ...prev]);
       setSelectedId(evaluation.id);
+      // The tracker list shows the latest fit badge.
+      router.refresh();
     } catch (err: unknown) {
       console.error("Job evaluation error:", err);
       setError(err instanceof Error ? err.message : "Evaluation failed.");
@@ -117,33 +121,59 @@ export default function JobEvaluationPanel({
   return (
     <section
       aria-labelledby="evaluation-heading"
-      className="max-w-3xl mx-auto mt-8 space-y-6"
+      className="max-w-3xl mx-auto mt-4 space-y-4"
     >
-      <div className="p-8 space-y-5 bg-card border border-border rounded-2xl shadow-card">
-        <div>
-          <h2
-            id="evaluation-heading"
-            className="text-xl font-extrabold tracking-tight text-foreground"
-          >
-            Evaluation
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Score how well your resume fits this job.
-          </p>
+      <div className="p-5 space-y-3 bg-card border border-border rounded-2xl shadow-card">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2
+              id="evaluation-heading"
+              className="text-xl font-extrabold tracking-tight text-foreground"
+            >
+              Evaluation
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Score how well your resume fits this job.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {isEvaluating && (
+              <span className="text-xs text-muted-foreground">
+                This can take up to a minute.
+              </span>
+            )}
+            <Button
+              type="button"
+              onClick={handleEvaluate}
+              disabled={!hasDescription || isEvaluating}
+            >
+              {isEvaluating
+                ? "Evaluating..."
+                : evaluations.length
+                  ? "Re-evaluate"
+                  : "Evaluate"}
+            </Button>
+          </div>
         </div>
 
         {!hasDescription ? (
           <p className="text-sm text-foreground">
-            Add a job description in the details above and save to evaluate this
-            job.
+            Add a job description on the{" "}
+            <Link
+              href={`/tracker/${job.id}`}
+              className="font-semibold text-primary hover:underline"
+            >
+              Tracking tab
+            </Link>{" "}
+            and save to evaluate this job.
           </p>
         ) : (
-          <fieldset className="space-y-3">
-            <legend className="text-sm font-bold text-foreground mb-2">
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-bold text-foreground mb-1">
               Resume
             </legend>
             {hasProfileResume ? (
-              <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
                 <div className="flex items-center gap-2">
                   <label className="flex items-center gap-2 text-sm text-foreground">
                     <input
@@ -192,7 +222,7 @@ export default function JobEvaluationPanel({
                 </label>
                 <textarea
                   id="evaluate-resume"
-                  rows={8}
+                  rows={4}
                   value={resumeText}
                   onChange={(e) => setResumeText(e.target.value)}
                   placeholder="Paste your resume here"
@@ -227,25 +257,6 @@ export default function JobEvaluationPanel({
             {error}
           </div>
         )}
-
-        <div className="flex items-center justify-end gap-3">
-          {isEvaluating && (
-            <span className="text-xs text-muted-foreground">
-              This can take up to a minute.
-            </span>
-          )}
-          <Button
-            type="button"
-            onClick={handleEvaluate}
-            disabled={!hasDescription || isEvaluating}
-          >
-            {isEvaluating
-              ? "Evaluating..."
-              : evaluations.length
-                ? "Re-evaluate"
-                : "Evaluate"}
-          </Button>
-        </div>
       </div>
 
       {evaluations.length > 1 && (

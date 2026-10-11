@@ -41,9 +41,66 @@ export function EvaluationCard({
   const band = getScoreBand(matchScore);
   const badge = bandStyles[band];
 
+  const overallBadge = (
+    <div
+      className={cn(
+        "flex flex-col justify-center text-center rounded-xl border px-5.5 py-1",
+        // Beside the breakdown: skip its heading (text-xs line + mb-3) so the
+        // badge lines up with the score items.
+        !showHeader && "sm:mt-7",
+        badge.badgeClassName,
+      )}
+    >
+      <div className="text-[10px] font-bold tracking-wide mb-1">OVERALL</div>
+      <div className="text-xl font-extrabold leading-none">{badge.label}</div>
+    </div>
+  );
+
+  const breakdown = (
+    <>
+      <div className="text-xs font-bold text-muted-foreground tracking-wide mb-3">
+        SCORE BREAKDOWN
+      </div>
+      <div
+        className={cn(
+          "grid grid-cols-1 sm:grid-cols-3 gap-4",
+          showHeader && "mb-7",
+        )}
+      >
+        <ScoreBar
+          label={SCORE_DIMENSIONS.tech.label}
+          score={score_breakdown?.[SCORE_DIMENSIONS.tech.fullKey]}
+          description={SCORE_DIMENSIONS.tech.description}
+        />
+        <ScoreBar
+          label={SCORE_DIMENSIONS.domain.label}
+          score={score_breakdown?.[SCORE_DIMENSIONS.domain.fullKey]}
+          description={SCORE_DIMENSIONS.domain.description}
+        />
+        <ScoreBar
+          label={SCORE_DIMENSIONS.scope.label}
+          score={score_breakdown?.[SCORE_DIMENSIONS.scope.fullKey]}
+          description={SCORE_DIMENSIONS.scope.description}
+        />
+      </div>
+    </>
+  );
+
   return (
-    <div className="bg-card border border-border rounded-2xl p-8 shadow-card">
-      <div className="flex justify-between items-start gap-4 mb-6">
+    <div
+      className={cn(
+        "bg-card border border-border rounded-2xl shadow-card",
+        showHeader ? "p-8" : "p-5",
+      )}
+    >
+      <div
+        className={cn(
+          "flex gap-4",
+          showHeader
+            ? "justify-between items-start mb-6"
+            : "flex-col sm:flex-row sm:items-stretch mb-6",
+        )}
+      >
         {showHeader ? (
           <div className="min-w-0">
             <h2 className="text-2xl font-extrabold tracking-tight text-foreground mb-1">
@@ -66,44 +123,13 @@ export function EvaluationCard({
               </div>
             )}
           </div>
-        ) : (
-          <div />
-        )}
-        <div
-          className={cn(
-            "text-center rounded-xl border px-5.5 py-3 min-w-[100px] shrink-0",
-            badge.badgeClassName,
-          )}
-        >
-          <div className="text-[10px] font-bold tracking-wide mb-1">
-            OVERALL
-          </div>
-          <div className="text-2xl font-extrabold leading-none">
-            {badge.label}
-          </div>
-        </div>
+        ) : null}
+
+        {!showHeader && <div className="flex-1">{breakdown}</div>}
+        {overallBadge}
       </div>
 
-      <div className="text-xs font-bold text-muted-foreground tracking-wide mb-3">
-        SCORE BREAKDOWN
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
-        <ScoreBar
-          label={SCORE_DIMENSIONS.tech.label}
-          score={score_breakdown?.[SCORE_DIMENSIONS.tech.fullKey]}
-          description={SCORE_DIMENSIONS.tech.description}
-        />
-        <ScoreBar
-          label={SCORE_DIMENSIONS.domain.label}
-          score={score_breakdown?.[SCORE_DIMENSIONS.domain.fullKey]}
-          description={SCORE_DIMENSIONS.domain.description}
-        />
-        <ScoreBar
-          label={SCORE_DIMENSIONS.scope.label}
-          score={score_breakdown?.[SCORE_DIMENSIONS.scope.fullKey]}
-          description={SCORE_DIMENSIONS.scope.description}
-        />
-      </div>
+      {showHeader && breakdown}
 
       <div className="bg-background border-l-[3px] border-primary rounded-[10px] px-5 py-4 mb-7">
         <h3 className="text-[13px] font-bold text-foreground mb-1.5">
@@ -123,9 +149,7 @@ export function EvaluationCard({
             {key_strengths?.length ? (
               key_strengths.map((strength, idx) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <span className="mt-0.5 text-band-good">
-                    ●
-                  </span>
+                  <span className="mt-0.5 text-band-good">●</span>
                   <span>{strength}</span>
                 </li>
               ))
@@ -145,9 +169,7 @@ export function EvaluationCard({
             {potential_gaps?.length ? (
               potential_gaps.map((gap, idx) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <span className="mt-0.5 text-band-stretch-bar">
-                    ●
-                  </span>
+                  <span className="mt-0.5 text-band-stretch-bar">●</span>
                   <span>{gap}</span>
                 </li>
               ))
@@ -189,10 +211,11 @@ function ScoreBar({
   score: number | undefined;
   description: string;
 }) {
-  const band = typeof score === "number" ? bandStyles[getScoreBand(score)] : null;
+  const band =
+    typeof score === "number" ? bandStyles[getScoreBand(score)] : null;
 
   return (
-    <div className="bg-background rounded-[10px] px-4 py-3.5">
+    <div className="bg-background rounded-[10px] px-4 py-3.5 flex flex-col justify-between">
       <div className="flex justify-between text-[13px] mb-2">
         <Tooltip>
           <TooltipTrigger
@@ -205,14 +228,6 @@ function ScoreBar({
             {description}
           </TooltipContent>
         </Tooltip>
-        <span
-          className={cn(
-            "font-bold",
-            band ? band.barTextClassName : "text-muted-foreground",
-          )}
-        >
-          {band ? band.shortLabel : "N/A"}
-        </span>
       </div>
       <div className="h-1.5 rounded-full bg-border overflow-hidden">
         <div
