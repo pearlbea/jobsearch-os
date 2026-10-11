@@ -6,6 +6,7 @@ import { Job } from "@/types/database";
 import Link from "next/link";
 import { STATUS_LABELS } from "@/lib/labels";
 import { Button } from "@/components/ui/button";
+import { bandStyles, getScoreBand } from "@/lib/score-band";
 
 export default function JobTrackerRow({ job }: { job: Job }) {
   const router = useRouter();
@@ -36,6 +37,12 @@ export default function JobTrackerRow({ job }: { job: Job }) {
     }
   };
 
+  const jobName = `${job.role_title} at ${job.company_name}`;
+  const band =
+    typeof job.match_score === "number"
+      ? bandStyles[getScoreBand(job.match_score)]
+      : null;
+
   return (
     <li className="flex items-center gap-4 p-4">
       <Link
@@ -50,6 +57,21 @@ export default function JobTrackerRow({ job }: { job: Job }) {
           <li>{job.status ? STATUS_LABELS[job.status] : "No status"}</li>
         </ul>
       </Link>
+      <Link
+        href={`/tracker/${job.id}/evaluation`}
+        aria-label={
+          band
+            ? `${band.label}: view evaluation for ${jobName}`
+            : `Evaluate ${jobName}`
+        }
+        className={
+          band
+            ? `shrink-0 px-2.5 py-1 border rounded-full text-xs font-bold ${band.badgeClassName}`
+            : "shrink-0 text-sm font-semibold text-primary hover:underline"
+        }
+      >
+        {band ? band.label : "Evaluate"}
+      </Link>
       {error && (
         <p role="alert" className="text-sm font-medium text-red-800">
           {error}
@@ -61,7 +83,7 @@ export default function JobTrackerRow({ job }: { job: Job }) {
         size="sm"
         disabled={isDeleting}
         onClick={handleDelete}
-        aria-label={`Delete ${job.role_title} at ${job.company_name}`}
+        aria-label={`Delete ${jobName}`}
       >
         {isDeleting ? "Deleting..." : "Delete"}
       </Button>

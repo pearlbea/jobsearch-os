@@ -16,8 +16,8 @@ track application details and conversations/interviews.
   the same change in `schema.sql` AND `types/database.ts`**;
   `supabase/schema.test.ts` fails if `schema.sql`'s columns drift from the
   types (via the `test/fixtures.ts` row factories).
-- **Evaluation flow**: evaluation happens only on a job's tracker page
-  (`components/job-evaluation-panel.tsx`), via
+- **Evaluation flow**: evaluation happens only on a job's Evaluation tab
+  (`/tracker/[job_id]/evaluation`, `components/job-evaluation-panel.tsx`), via
   `app/api/jobs/[id]/evaluate/route.ts`. It evaluates the job's saved
   `raw_description` against the job's `tailored_resume` if set, else the
   profile resume (recorded per evaluation in `evaluations.resume_snapshot`).
@@ -32,9 +32,10 @@ track application details and conversations/interviews.
   the `evaluations_enforce_limit` trigger in `schema.sql` is what enforces it
   (the number is duplicated there; `schema.test.ts` keeps them equal).
 - **Pages**: `/` (dashboard/landing), `/profile` (profile + default resume),
-  `/tracker` (job list), `/tracker/new` (add a job), `/tracker/[job_id]` (job
-  details, evaluation, interactions), `/login`. `/evaluator` only redirects
-  old links to the tracker.
+  `/tracker` (job list), `/tracker/new` (add a job), `/tracker/[job_id]` (Tracking tab:
+  job details, interactions), `/tracker/[job_id]/evaluation` (Evaluation tab),
+  `/login`. The two job tabs share `tracker/[job_id]/layout.tsx` (back link +
+  `JobTabs`). `/evaluator` only redirects old links to the Evaluation tab.
 - **`stories` table** exists in the schema (title/company/competencies/story
   text — sounds like behavioral-interview accomplishment stories). Only its
   metadata is read, as extra context for evaluations; nothing writes it yet.

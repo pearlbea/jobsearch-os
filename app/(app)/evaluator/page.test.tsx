@@ -22,11 +22,11 @@ describe("EvaluatorPage (legacy redirect)", () => {
     expect(redirect).toHaveBeenCalledWith("/tracker");
   });
 
-  it("redirects an old job link to that job's tracker page", async () => {
+  it("redirects an old job link to that job's Evaluation tab", async () => {
     await expect(EvaluatorPage(props({ job: "job-1" }))).rejects.toThrow(
       "NEXT_REDIRECT",
     );
-    expect(redirect).toHaveBeenCalledWith("/tracker/job-1");
+    expect(redirect).toHaveBeenCalledWith("/tracker/job-1/evaluation");
   });
 
   it("ignores a repeated job param", async () => {

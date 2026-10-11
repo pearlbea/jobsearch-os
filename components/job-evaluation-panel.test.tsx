@@ -8,6 +8,10 @@ import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supaba
 import { makeEvaluation, makeJob } from "@/test/fixtures";
 
 vi.mock("@/lib/supabase/client", () => ({ createClient: vi.fn() }));
+const mockRefresh = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: mockRefresh, push: vi.fn() }),
+}));
 
 const job = makeJob({ user_id: "user-123", raw_description: "Build things." });
 const existingEvaluation = makeEvaluation({ id: "eval-1", match_score: 82 });
@@ -56,8 +60,12 @@ describe("JobEvaluationPanel", () => {
     );
 
     expect(
-      screen.getByText(/Add a job description in the details above/),
+      screen.getByText(/Add a job description on the/),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Tracking tab" })).toHaveAttribute(
+      "href",
+      "/tracker/job-1",
+    );
     expect(screen.getByRole("button", { name: "Evaluate" })).toBeDisabled();
   });
 
@@ -71,6 +79,7 @@ describe("JobEvaluationPanel", () => {
 
     expect(await screen.findByText("Stretch")).toBeInTheDocument();
     expect(screen.getByText("Tailored advice.")).toBeInTheDocument();
+    expect(mockRefresh).toHaveBeenCalledTimes(1);
     // Choosing the profile resume clears any tailored one on the job.
     expect(mockSupabase.update).toHaveBeenCalledWith({ tailored_resume: null });
     expect(mockSupabase.eq).toHaveBeenCalledWith("id", "job-1");
