@@ -104,7 +104,7 @@ create table if not exists public.interactions (
   -- Null = not scheduled yet; future timestamps = upcoming.
   occurred_at timestamptz,
   interviewer_names text[],
-  outcome text check (outcome in ('scheduled', 'completed', 'passed', 'rejected', 'cancelled')),
+  outcome text check (outcome in ('scheduled', 'completed', 'cancelled')),
   notes text,
   -- Which `stories` were used. Not FK-enforced (Postgres can't on arrays).
   story_ids uuid[],

@@ -24,7 +24,7 @@ const baseInteraction = makeInteraction({
   user_id: "user-123",
   occurred_at: "2026-09-10T15:00:00Z",
   interviewer_names: ["Dana"],
-  outcome: "passed",
+  outcome: "scheduled",
   notes: "Went well.",
   created_at: "2026-09-01T00:00:00Z",
 });
@@ -78,9 +78,9 @@ describe("JobInteractions", () => {
       .getAllByRole("heading", { level: 3 })
       .map((h) => h.textContent);
     expect(headings).toEqual([
-      "OnsitePassed",
-      "TechnicalPassed",
-      "Recruiter ScreenPassed",
+      "OnsiteScheduled",
+      "TechnicalScheduled",
+      "Recruiter ScreenScheduled",
     ]);
     expect(screen.getByText("Not scheduled")).toBeInTheDocument();
     expect(screen.getAllByText("With Dana")).toHaveLength(3);
@@ -125,21 +125,21 @@ describe("JobInteractions", () => {
 
   it("edits an interaction", async () => {
     mockSupabase.single.mockResolvedValue({
-      data: { ...baseInteraction, outcome: "rejected" },
+      data: { ...baseInteraction, outcome: "cancelled" },
       error: null,
     });
     const user = userEvent.setup();
     render(<JobInteractions {...props} />);
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
-    await user.selectOptions(screen.getByLabelText("Outcome"), "rejected");
+    await user.selectOptions(screen.getByLabelText("Outcome"), "cancelled");
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => {
-      expect(screen.getByText("Rejected")).toBeInTheDocument();
+      expect(screen.getByText("Cancelled")).toBeInTheDocument();
     });
     expect(mockSupabase.update).toHaveBeenCalledWith(
-      expect.objectContaining({ outcome: "rejected" }),
+      expect.objectContaining({ outcome: "cancelled" }),
     );
     expect(mockSupabase.eq).toHaveBeenCalledWith("id", "int-1");
     expect(mockSupabase.eq).toHaveBeenCalledWith("user_id", "user-123");
@@ -176,7 +176,7 @@ describe("JobInteractions", () => {
     await user.type(within(addForm).getByLabelText("With"), "Sam");
 
     resolveSave({
-      data: { ...baseInteraction, outcome: "rejected" },
+      data: { ...baseInteraction, outcome: "cancelled" },
       error: null,
     });
 
@@ -184,7 +184,7 @@ describe("JobInteractions", () => {
       expect(
         screen.getByRole("heading", {
           level: 3,
-          name: "Recruiter ScreenRejected",
+          name: "Recruiter ScreenCancelled",
         }),
       ).toBeInTheDocument();
     });
