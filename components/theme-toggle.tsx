@@ -11,7 +11,7 @@ const STORAGE_KEY = "theme";
 
 function getStoredTheme(): Theme {
   if (typeof window === "undefined") return "light";
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = localStorage?.getItem(STORAGE_KEY);
   if (stored === "dark" || stored === "light") return stored;
   if (typeof window.matchMedia !== "function") return "light";
   return window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -32,7 +32,7 @@ export function ThemeToggle({ className }: { className?: string }) {
   function toggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
-    localStorage.setItem(STORAGE_KEY, next);
+    localStorage?.setItem(STORAGE_KEY, next);
   }
 
   return (
@@ -41,7 +41,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       variant="ghost"
       size="icon-sm"
       onClick={toggle}
-      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={
+        theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+      }
       className={cn("text-muted-foreground", className)}
     >
       {theme === "dark" ? <Sun /> : <Moon />}

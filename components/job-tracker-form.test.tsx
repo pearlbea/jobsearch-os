@@ -4,7 +4,10 @@ import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
 import JobTrackerForm from "./job-tracker-form";
 import { createClient } from "@/lib/supabase/client";
-import { createMockSupabaseClient, type MockSupabaseClient } from "@/test/supabase-mock";
+import {
+  createMockSupabaseClient,
+  type MockSupabaseClient,
+} from "@/test/supabase-mock";
 import { makeJob } from "@/test/fixtures";
 
 const mockRefresh = vi.fn();
@@ -37,7 +40,10 @@ describe("JobTrackerForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSupabase = createMockSupabaseClient();
-    mockSupabase.single.mockResolvedValue({ data: { id: "job-1" }, error: null });
+    mockSupabase.single.mockResolvedValue({
+      data: { id: "job-1" },
+      error: null,
+    });
     (createClient as Mock).mockReturnValue(mockSupabase);
   });
 
@@ -49,7 +55,9 @@ describe("JobTrackerForm", () => {
     expect(screen.getByLabelText("Work Mode")).toHaveValue("remote");
     expect(screen.getByLabelText("Application Date")).toHaveValue("2026-09-01");
     expect(screen.getByLabelText("Salary Range")).toHaveValue("$150k–$180k");
-    expect(screen.getByLabelText("Recruiter reached out first")).not.toBeChecked();
+    expect(
+      screen.getByLabelText("Recruiter reached out first"),
+    ).not.toBeChecked();
     expect(screen.getByLabelText("Contact Person")).toHaveValue("");
   });
 
@@ -58,7 +66,10 @@ describe("JobTrackerForm", () => {
     render(<JobTrackerForm job={job} />);
 
     await user.selectOptions(screen.getByLabelText("Status"), "interviewing");
-    await user.type(screen.getByLabelText("Contact Person"), "  Dana Recruiter ");
+    await user.type(
+      screen.getByLabelText("Contact Person"),
+      "  Dana Recruiter ",
+    );
     await user.clear(screen.getByLabelText("Salary Range"));
     await user.click(screen.getByLabelText("Recruiter reached out first"));
     await user.click(screen.getByRole("button", { name: "Save" }));
@@ -121,6 +132,63 @@ describe("JobTrackerForm", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Network down");
+    expect(mockRefresh).not.toHaveBeenCalled();
+  });
+
+  it("deletes the job after confirming and returns to the tracker page", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<JobTrackerForm job={job} />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Delete Staff Engineer at Acme",
+      }),
+    );
+
+    await waitFor(() => expect(mockRefresh).toHaveBeenCalled());
+    expect(window.confirm).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "evaluations and interactions will be deleted too",
+      ),
+    );
+    expect(fetchMock).toHaveBeenCalledWith("/api/jobs/job-1", {
+      method: "DELETE",
+    });
+  });
+
+  it("does not delete when the confirm is dismissed", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<JobTrackerForm job={job} />);
+
+    await user.click(screen.getByRole("button", { name: /Delete/ }));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("shows the error and re-enables the button when the delete fails", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({ error: "Not found" }),
+      }),
+    );
+    const user = userEvent.setup();
+    render(<JobTrackerForm job={job} />);
+
+    await user.click(screen.getByRole("button", { name: /Delete/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Not found");
+    expect(screen.getByRole("button", { name: /Delete/ })).toBeEnabled();
     expect(mockRefresh).not.toHaveBeenCalled();
   });
 
