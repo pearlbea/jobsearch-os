@@ -35,7 +35,9 @@ type TrackerFields = Pick<
 
 // Inputs hold "" for empty; the database stores null.
 type FormValues = {
-  [K in keyof TrackerFields]: TrackerFields[K] extends boolean ? boolean : string;
+  [K in keyof TrackerFields]: TrackerFields[K] extends boolean
+    ? boolean
+    : string;
 };
 
 function toFormValues(job: Job): FormValues {
@@ -68,7 +70,9 @@ function toPayload(values: FormValues): Partial<Job> {
     location: orNull(values.location),
     job_url: orNull(values.job_url),
     // Not trimmed: a pasted posting's formatting is kept as-is.
-    raw_description: values.raw_description.trim() ? values.raw_description : null,
+    raw_description: values.raw_description.trim()
+      ? values.raw_description
+      : null,
     status: orNull(values.status) as ApplicationStatus | null,
     work_mode: orNull(values.work_mode) as WorkMode | null,
     application_date: orNull(values.application_date),
@@ -96,6 +100,7 @@ export default function JobTrackerForm({ job }: { job: Job }) {
 
   const [values, setValues] = useState<FormValues>(() => toFormValues(job));
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -106,7 +111,9 @@ export default function JobTrackerForm({ job }: { job: Job }) {
     (value: FormValues[K]) =>
       setValues((prev) => ({ ...prev, [field]: value }));
 
-  const textProps = (field: Exclude<keyof FormValues, "recruiter_initiated">) => ({
+  const textProps = (
+    field: Exclude<keyof FormValues, "recruiter_initiated">,
+  ) => ({
     id: field,
     name: field,
     value: values[field],
@@ -145,6 +152,34 @@ export default function JobTrackerForm({ job }: { job: Job }) {
     }
   };
 
+  const handleDelete = async () => {
+    if (
+      !window.confirm(
+        `Delete ${job.role_title} at ${job.company_name}? Its evaluations and interactions will be deleted too.`,
+      )
+    ) {
+      return;
+    }
+    setIsDeleting(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/jobs/${job.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to delete job.");
+      }
+      router.push("/tracker");
+      router.refresh();
+    } catch (err: unknown) {
+      console.error("Job delete error:", err);
+      setMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to delete job.",
+      });
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -177,19 +212,33 @@ export default function JobTrackerForm({ job }: { job: Job }) {
           <label className={labelClass} htmlFor="role_title">
             Role Title
           </label>
-          <input type="text" required className={inputClass} {...textProps("role_title")} />
+          <input
+            type="text"
+            required
+            className={inputClass}
+            {...textProps("role_title")}
+          />
         </div>
         <div>
           <label className={labelClass} htmlFor="company_name">
             Company Name
           </label>
-          <input type="text" required className={inputClass} {...textProps("company_name")} />
+          <input
+            type="text"
+            required
+            className={inputClass}
+            {...textProps("company_name")}
+          />
         </div>
         <div>
           <label className={labelClass} htmlFor="location">
             Location
           </label>
-          <input type="text" className={inputClass} {...textProps("location")} />
+          <input
+            type="text"
+            className={inputClass}
+            {...textProps("location")}
+          />
         </div>
         <div>
           <label className={labelClass} htmlFor="work_mode">
@@ -256,7 +305,11 @@ export default function JobTrackerForm({ job }: { job: Job }) {
           <label className={labelClass} htmlFor="application_date">
             Application Date
           </label>
-          <input type="date" className={inputClass} {...textProps("application_date")} />
+          <input
+            type="date"
+            className={inputClass}
+            {...textProps("application_date")}
+          />
         </div>
         <div>
           <label className={labelClass} htmlFor="source">
@@ -289,13 +342,21 @@ export default function JobTrackerForm({ job }: { job: Job }) {
           <label className={labelClass} htmlFor="contact_person">
             Contact Person
           </label>
-          <input type="text" className={inputClass} {...textProps("contact_person")} />
+          <input
+            type="text"
+            className={inputClass}
+            {...textProps("contact_person")}
+          />
         </div>
         <div>
           <label className={labelClass} htmlFor="referral_name">
             Referral
           </label>
-          <input type="text" className={inputClass} {...textProps("referral_name")} />
+          <input
+            type="text"
+            className={inputClass}
+            {...textProps("referral_name")}
+          />
         </div>
       </fieldset>
 
@@ -319,7 +380,11 @@ export default function JobTrackerForm({ job }: { job: Job }) {
           <label className={labelClass} htmlFor="next_action_date">
             Next Action Date
           </label>
-          <input type="date" className={inputClass} {...textProps("next_action_date")} />
+          <input
+            type="date"
+            className={inputClass}
+            {...textProps("next_action_date")}
+          />
         </div>
         <div className="sm:col-span-2">
           <label className={labelClass} htmlFor="closed_reason">
@@ -344,8 +409,23 @@ export default function JobTrackerForm({ job }: { job: Job }) {
         </div>
       </fieldset>
 
-      <div className="pt-4 border-t border-border flex justify-end">
-        <Button type="submit" disabled={isSubmitting} size="lg" className="px-6">
+      <div className="pt-4 border-t gap-4 border-border flex justify-end items-center">
+        <Button
+          type="button"
+          variant="destructive"
+          size="lg"
+          disabled={isDeleting}
+          onClick={handleDelete}
+          aria-label={`Delete ${job.role_title} at ${job.company_name}`}
+        >
+          {isDeleting ? "Deleting..." : "Delete"}
+        </Button>
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          size="lg"
+          className="px-6"
+        >
           {isSubmitting ? "Saving..." : "Save"}
         </Button>
       </div>
