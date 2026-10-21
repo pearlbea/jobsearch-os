@@ -15,6 +15,16 @@ export const CAREER_LEVELS = [
 
 const careerLevel = z.enum(CAREER_LEVELS);
 
+// Soft caps on the list fields: stated to the model in the descriptions and
+// enforced by truncation in runEvaluation, not by .max(), so an overlong
+// list trims instead of failing the whole evaluation.
+export const MAX_MISSING_KEYWORDS = 8;
+export const MAX_FORMATTING_WARNINGS = 3;
+export const MAX_STRENGTHS = 3;
+export const MAX_GAPS = 2;
+export const MAX_TALKING_POINTS = 3;
+export const MAX_SKILLS = 6;
+
 // Short keys reduce completion token overhead by ~40%
 export const compactEvaluationSchema = z.object({
   co: z.string().describe("Company name"),
@@ -47,22 +57,20 @@ export const compactEvaluationSchema = z.object({
     missing_exact_keywords: z
       .array(z.string())
       .describe(
-        "High-importance exact keywords/phrases in the JD that are completely missing from the resume",
+        `Up to ${MAX_MISSING_KEYWORDS} high-importance exact keywords/phrases in the JD that are completely missing from the resume, most important first`,
       ),
     formatting_warnings: z
       .array(z.string())
       .describe(
-        "Any structural or clarity issues in the resume text (e.g. non-standard job titles, missing dates)",
+        `Up to ${MAX_FORMATTING_WARNINGS} structural or clarity issues in the resume text (e.g. non-standard job titles, missing dates)`,
       ),
   }),
   strengths: z
     .array(z.string())
-    .max(3)
-    .describe("Top 2-3 key match points (concise)"),
+    .describe(`Top 2-${MAX_STRENGTHS} key match points (concise)`),
   gaps: z
     .array(z.string())
-    .max(2)
-    .describe("Top 1-2 missing skills/qualifications"),
+    .describe(`Top 1-${MAX_GAPS} missing skills/qualifications`),
   advice: z.string().describe("1-sentence positioning strategy"),
   // Last of the scored/analytic fields so the scores are generated before any
   // talking-point text exists.
@@ -73,14 +81,12 @@ export const compactEvaluationSchema = z.object({
         basis: z.string().describe("Resume role or project this rests on"),
       }),
     )
-    .max(3)
     .describe(
-      "2-3 talking points the candidate can say; resume-supported only; empty if none",
+      `2-${MAX_TALKING_POINTS} talking points the candidate can say; resume-supported only; empty if none`,
     ),
   skills: z
     .array(z.string())
-    .max(6)
-    .describe("Top 6 extracted tech requirements"),
+    .describe(`Top ${MAX_SKILLS} extracted tech requirements`),
 });
 
 export type CompactEvaluation = z.infer<typeof compactEvaluationSchema>;

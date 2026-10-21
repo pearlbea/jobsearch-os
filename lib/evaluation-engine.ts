@@ -3,6 +3,12 @@ import { generateText, Output } from "ai";
 import {
   CAREER_LEVELS,
   compactEvaluationSchema,
+  MAX_FORMATTING_WARNINGS,
+  MAX_GAPS,
+  MAX_MISSING_KEYWORDS,
+  MAX_SKILLS,
+  MAX_STRENGTHS,
+  MAX_TALKING_POINTS,
 } from "@/lib/schemas/evaluation";
 import { redactPii } from "@/lib/redact-pii";
 import { validateTalkingPoints } from "@/lib/validate-talking-points";
@@ -113,11 +119,29 @@ export async function runEvaluation({
     prompt: `JOB POSTING:\n${cleanedDescription}`,
   });
 
-  const evalResult = { ...output, score: computeMatchScore(output.breakdown) };
+  const evalResult = {
+    ...output,
+    // Trim rather than reject lists the model ran past their stated cap.
+    ats_analysis: {
+      missing_exact_keywords: output.ats_analysis.missing_exact_keywords.slice(
+        0,
+        MAX_MISSING_KEYWORDS,
+      ),
+      formatting_warnings: output.ats_analysis.formatting_warnings.slice(
+        0,
+        MAX_FORMATTING_WARNINGS,
+      ),
+    },
+    strengths: output.strengths.slice(0, MAX_STRENGTHS),
+    gaps: output.gaps.slice(0, MAX_GAPS),
+    points: (output.points ?? []).slice(0, MAX_TALKING_POINTS),
+    skills: output.skills.slice(0, MAX_SKILLS),
+    score: computeMatchScore(output.breakdown),
+  };
 
   // Drop points citing numbers the resume lacks; never fails the evaluation.
   const { kept: talkingPoints, dropped: droppedTalkingPoints } =
-    validateTalkingPoints(output.points ?? [], redactedResume);
+    validateTalkingPoints(evalResult.points, redactedResume);
 
   // Map compact keys back to full database schema before saving. The field
   // names on both sides come from SCORE_DIMENSIONS (lib/score-dimensions.ts)

@@ -60,3 +60,53 @@ describe("runEvaluation talking points", () => {
     expect(empty.fullEvaluationSummary.talking_points).toBeUndefined();
   });
 });
+
+describe("runEvaluation list caps", () => {
+  it("trims keyword and warning lists past their caps instead of failing", async () => {
+    (generateText as Mock).mockResolvedValue({
+      output: {
+        ...base,
+        points: [],
+        ats_analysis: {
+          missing_exact_keywords: Array.from({ length: 10 }, (_, i) => `kw${i}`),
+          formatting_warnings: ["a", "b", "c", "d"],
+        },
+      },
+    });
+    const { fullEvaluationSummary } = await runEvaluation({
+      profile: { full_name: null, resume: "Resume." },
+      stories: null,
+      cleanedDescription: "job",
+    });
+    expect(fullEvaluationSummary.ats_analysis?.missing_exact_keywords).toEqual(
+      ["kw0", "kw1", "kw2", "kw3", "kw4", "kw5", "kw6", "kw7"],
+    );
+    expect(fullEvaluationSummary.ats_analysis?.formatting_warnings).toEqual([
+      "a",
+      "b",
+      "c",
+    ]);
+  });
+
+  it("trims strengths, gaps, talking points and skills past their caps", async () => {
+    const list = (n: number) => Array.from({ length: n }, (_, i) => `s${i}`);
+    (generateText as Mock).mockResolvedValue({
+      output: {
+        ...base,
+        strengths: list(5),
+        gaps: list(4),
+        skills: list(9),
+        points: ["a", "b", "c", "d", "e"].map((s) => ({ say: `I led ${s}.`, basis: "Acme" })),
+      },
+    });
+    const { evalResult, fullEvaluationSummary } = await runEvaluation({
+      profile: { full_name: null, resume: "Resume." },
+      stories: null,
+      cleanedDescription: "job",
+    });
+    expect(fullEvaluationSummary.key_strengths).toEqual(list(3));
+    expect(fullEvaluationSummary.potential_gaps).toEqual(list(2));
+    expect(evalResult.skills).toEqual(list(6));
+    expect(fullEvaluationSummary.talking_points).toHaveLength(3);
+  });
+});
